@@ -1,0 +1,45 @@
+plugins {
+    id "org.jetbrains.kotlin.jvm" version "1.3.72"
+    id "org.springframework.boot" version "2.3.1.RELEASE"
+    id "io.spring.dependency-management" version "1.0.9.RELEASE"
+}
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    implementation group: "org.jetbrains.kotlin", name: "kotlin-stdlib-jdk8"
+
+    implementation group: "org.springframework.boot", name: "spring-boot-starter-webflux"
+    implementation group: "org.springframework.boot", name: "spring-boot-starter-data-jpa"
+    annotationProcessor group: "org.springframework.boot", name: "spring-boot-configuration-processor"
+
+    implementation group: "org.flywaydb", name: "flyway-core"
+    runtimeOnly group: "org.postgresql", name: "postgresql"
+
+    testImplementation(group: "org.springframework.boot", name: "spring-boot-starter-test") {
+        exclude group: "org.junit.vintage", module: "junit-vintage-engine"
+    }
+    testImplementation group: "io.projectreactor", name: "reactor-test"
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+group "me.honnold"
+version "0.1.0"
+
+test {
+    useJUnitPlatform()
+}
