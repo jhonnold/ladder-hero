@@ -1,8 +1,9 @@
-package me.honnold.ladderhero
+package me.honnold.ladderhero.controller
 
 import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
+import reactor.core.publisher.Mono
 
 @RestController
 class HelloController {
@@ -11,13 +12,13 @@ class HelloController {
     }
 
     @GetMapping
-    fun hello(): String {
+    fun hello(): Mono<String> {
         logger.trace("A TRACE Message")
         logger.debug("A DEBUG Message")
         logger.info("An INFO Message")
         logger.warn("A WARN Message")
         logger.error("An ERROR Message")
 
-        return "Hello, World!"
+        return Mono.just("Hello, World!")
     }
 }

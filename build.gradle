@@ -18,6 +18,10 @@ dependencies {
     implementation group: "org.flywaydb", name: "flyway-core"
     runtimeOnly group: "org.postgresql", name: "postgresql"
 
+    implementation platform("software.amazon.awssdk:bom:2.13.56")
+    implementation group: "software.amazon.awssdk", name: "s3"
+    implementation group: "software.amazon.awssdk", name: "netty-nio-client"
+
     testImplementation(group: "org.springframework.boot", name: "spring-boot-starter-test") {
         exclude group: "org.junit.vintage", module: "junit-vintage-engine"
     }
