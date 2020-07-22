@@ -13,5 +13,5 @@ data class FileUpload(
     @Column("orig_file_nm")
     var fileName: String,
 
-    private var status: String = "WAITING"
+    var status: String = "WAITING"
 )

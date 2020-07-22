@@ -3,7 +3,7 @@ spring:
     url: r2dbc:postgresql://localhost:5432/ladder-hero-dev
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
-  flway:
+  flyway:
     url: jdbc:postgresql://localhost:5432/ladder-hero-dev
     user: ${DB_USERNAME}
     password: ${DB_PASSWORD}
