@@ -96,7 +96,7 @@ class S3ClientService(s3Region: Region, s3CredentialsProvider: AwsCredentialsPro
                     throw RuntimeException("Upload failed!")
 
                 logger.info("Successful upload of ${filePart.filename()} to ${this.s3Bucket}")
-                Pair(filePart.filename(), fileKey)
+                Pair(fileKey, filePart.filename())
             }
     }
 

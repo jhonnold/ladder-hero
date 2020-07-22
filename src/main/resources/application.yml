@@ -1,8 +1,20 @@
 spring:
-  datasource:
-    url: jdbc:postgresql:ladder-hero-dev
-    username: postgres
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/ladder-hero-dev
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  flway:
+    url: jdbc:postgresql://localhost:5432/ladder-hero-dev
+    user: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     platform: postgres
+
+aws:
+  s3:
+    region: us-east-2
+    access-key: ${S3_ACCESS_KEY}
+    secret-key: ${S3_SECRET_KEY}
+    bucket: ${S3_BUCKET}
 
 logging:
   level:
