@@ -111,11 +111,13 @@ class S3ClientService(s3Region: Region, s3CredentialsProvider: AwsCredentialsPro
 
     fun download(uuid: UUID): Mono<Path> {
         val path = Paths.get(TEMP_DIR, "$uuid.SC2Replay")
+        logger.debug("Requesting file key $uuid")
 
         val request = GetObjectRequest.builder()
             .bucket(this.s3Bucket)
             .key(uuid.toString())
             .build()
+
         val requestMono = Mono.fromFuture(this.s3Client.getObject(request, FluxResponseProvider()))
 
         val data = Flux.from(requestMono)
@@ -129,6 +131,8 @@ class S3ClientService(s3Region: Region, s3CredentialsProvider: AwsCredentialsPro
 
         return DataBufferUtils.write(data, path, StandardOpenOption.CREATE_NEW)
             .map { path }
+            .doOnSuccess { logger.info("Saved file $uuid to $path") }
+            .doOnError { logger.error(it.message) }
     }
 
     private fun concatBuffers(buffers: List<DataBuffer>): ByteBuffer {
