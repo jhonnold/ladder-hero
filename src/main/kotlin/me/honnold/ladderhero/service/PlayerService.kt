@@ -38,7 +38,7 @@ class PlayerService(private val playerDAO: PlayerDAO) {
                         regionId = regionId.toInt(),
                         realmId = realmId.toInt()
                     )
-                ).map { PlayerData(it, playerId.toInt(), race, name) }
+                ).map { PlayerData(it, playerId.toInt() + 1, race, name) }
             }
     }
 

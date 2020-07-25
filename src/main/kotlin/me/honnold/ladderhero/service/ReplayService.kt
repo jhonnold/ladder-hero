@@ -2,11 +2,11 @@ package me.honnold.ladderhero.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import me.honnold.ladderhero.model.db.FileUpload
+import me.honnold.ladderhero.model.db.Player
 import me.honnold.ladderhero.model.db.Replay
 import me.honnold.ladderhero.model.db.Summary
 import me.honnold.ladderhero.repository.FileUploadRepository
 import me.honnold.ladderhero.repository.ReplayRepository
-import me.honnold.ladderhero.repository.SummaryRepository
 import me.honnold.ladderhero.service.aws.S3ClientService
 import me.honnold.ladderhero.util.gameDuration
 import me.honnold.ladderhero.util.windowsTimeToDate
@@ -23,7 +23,7 @@ class ReplayService(
     private val fileUploadRepository: FileUploadRepository,
     private val playerService: PlayerService,
     private val replayRepository: ReplayRepository,
-    private val summaryRepository: SummaryRepository
+    private val summaryService: SummaryService
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(ReplayService::class.java)
@@ -40,24 +40,12 @@ class ReplayService(
             .flatMap { this.s3ClientService.download(it.key) }
             .map { data = this.loadReplayData(it) }
             .flatMap { this.buildReplay(fileUpload, data!!) }
-            .doOnSuccess { state.replay = it }
+            .doOnNext { state.replay = it }
             .flatMapMany { this.playerService.buildPlayers(data!!) }
-            .flatMap { playerData ->
-                val replay = state.replay!!
-
-                val summary = Summary(
-                    replayId = replay.id,
-                    playerId = playerData.player.id,
-                    workingId = playerData.id,
-                    race = playerData.race,
-                    name = playerData.name
-                )
-
-                this.summaryRepository.save(summary)
-                    .doOnSuccess {
-                        logger.info("Successfully saved summary for ${playerData.player.id} on ${replay.id} as $it")
-                    }
-            }
+            .doOnNext { state.players.add(it.player) }
+            .flatMap { this.summaryService.initializeSummary(state.replay!!, it) }
+            .doOnNext { state.summaries.add(it) }
+            .flatMap { this.summaryService.populateSummary(it, data!!) }
             .then()
 
     }
@@ -92,7 +80,8 @@ class ReplayService(
 
     class ProcessingState {
         var replay: Replay? = null
-        var players: List<PlayerService.PlayerData>? = null
+        var players: MutableList<Player> = ArrayList()
+        var summaries: MutableList<Summary> = ArrayList()
     }
 
     class ReplayData(val buildNo: Int, val archive: Archive, val protocol: Protocol) {
