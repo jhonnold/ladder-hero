@@ -2,10 +2,11 @@ package me.honnold.ladderhero.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import me.honnold.ladderhero.model.db.FileUpload
-import me.honnold.ladderhero.model.db.Player
 import me.honnold.ladderhero.model.db.Replay
+import me.honnold.ladderhero.model.db.Summary
 import me.honnold.ladderhero.repository.FileUploadRepository
 import me.honnold.ladderhero.repository.ReplayRepository
+import me.honnold.ladderhero.repository.SummaryRepository
 import me.honnold.ladderhero.service.aws.S3ClientService
 import me.honnold.ladderhero.util.gameDuration
 import me.honnold.ladderhero.util.windowsTimeToDate
@@ -21,7 +22,8 @@ class ReplayService(
     private val s3ClientService: S3ClientService,
     private val fileUploadRepository: FileUploadRepository,
     private val playerService: PlayerService,
-    private val replayRepository: ReplayRepository
+    private val replayRepository: ReplayRepository,
+    private val summaryRepository: SummaryRepository
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(ReplayService::class.java)
@@ -39,9 +41,25 @@ class ReplayService(
             .map { data = this.loadReplayData(it) }
             .flatMap { this.buildReplay(fileUpload, data!!) }
             .doOnSuccess { state.replay = it }
-            .flatMap { this.playerService.buildPlayers(data!!).collectList() }
-            .doOnSuccess { state.players = it }
+            .flatMapMany { this.playerService.buildPlayers(data!!) }
+            .flatMap { playerData ->
+                val replay = state.replay!!
+
+                val summary = Summary(
+                    replayId = replay.id,
+                    playerId = playerData.player.id,
+                    workingId = playerData.id,
+                    race = playerData.race,
+                    name = playerData.name
+                )
+
+                this.summaryRepository.save(summary)
+                    .doOnSuccess {
+                        logger.info("Successfully saved summary for ${playerData.player.id} on ${replay.id} as $it")
+                    }
+            }
             .then()
+
     }
 
     private fun buildReplay(upload: FileUpload, data: ReplayData): Mono<Replay> {
