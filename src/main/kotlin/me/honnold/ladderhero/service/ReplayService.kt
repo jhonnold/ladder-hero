@@ -2,6 +2,7 @@ package me.honnold.ladderhero.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import me.honnold.ladderhero.model.db.FileUpload
+import me.honnold.ladderhero.model.db.Player
 import me.honnold.ladderhero.model.db.Replay
 import me.honnold.ladderhero.repository.FileUploadRepository
 import me.honnold.ladderhero.repository.ReplayRepository
@@ -29,6 +30,7 @@ class ReplayService(
 
     fun processNewReplay(fileUpload: FileUpload): Mono<Void> {
         var data: ReplayData? = null
+        val state = ProcessingState()
 
         fileUpload.status = "PROCESSING"
 
@@ -36,6 +38,9 @@ class ReplayService(
             .flatMap { this.s3ClientService.download(it.key) }
             .map { data = this.loadReplayData(it) }
             .flatMap { this.buildReplay(fileUpload, data!!) }
+            .doOnSuccess { state.replay = it }
+            .flatMap { this.playerService.buildPlayers(data!!).collectList() }
+            .doOnSuccess { state.players = it }
             .then()
     }
 
@@ -65,6 +70,11 @@ class ReplayService(
         logger.info("Identified Protocol $buildNo for $path")
 
         return ReplayData(buildNo.toInt(), archive, protocol)
+    }
+
+    class ProcessingState {
+        var replay: Replay? = null
+        var players: List<PlayerService.PlayerData>? = null
     }
 
     class ReplayData(val buildNo: Int, val archive: Archive, val protocol: Protocol) {

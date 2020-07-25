@@ -1,6 +1,7 @@
 package me.honnold.ladderhero.util
 
 import me.honnold.sc2protocol.model.event.Event
+import org.apache.commons.text.StringEscapeUtils
 import java.util.*
 import kotlin.math.floor
 
@@ -15,3 +16,5 @@ fun gameDuration(events: List<Event>): Int {
 
     return if (firstLeaveEvent == null) 0 else floor(firstLeaveEvent.loop / 22.4).toInt()
 }
+
+fun unescapeName(name: String): String = StringEscapeUtils.unescapeHtml4(name).replace("<sp/>", " ")
