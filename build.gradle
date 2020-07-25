@@ -6,11 +6,18 @@ plugins {
 
 repositories {
     jcenter()
+
+    maven {
+        url = "https://dl.bintray.com/jhonnold/maven"
+    }
 }
 
 dependencies {
     implementation group: "org.jetbrains.kotlin", name: "kotlin-stdlib-jdk8"
     implementation group: "org.jetbrains.kotlin", name: "kotlin-reflect"
+
+    implementation group: "me.honnold", name: "mpq", version: "1.0.0"
+    implementation group: "me.honnold", name: "sc2protocol", version: "1.0.0"
 
     implementation group: "org.springframework.boot", name: "spring-boot-starter-webflux"
     implementation group: "org.springframework.boot", name: "spring-boot-starter-data-r2dbc"
@@ -23,6 +30,8 @@ dependencies {
     implementation platform("software.amazon.awssdk:bom:2.13.56")
     implementation group: "software.amazon.awssdk", name: "s3"
     implementation group: "software.amazon.awssdk", name: "netty-nio-client"
+
+    implementation group: "org.apache.commons", name: "commons-text", version: "1.8"
 
     testImplementation(group: "org.springframework.boot", name: "spring-boot-starter-test") {
         exclude group: "org.junit.vintage", module: "junit-vintage-engine"

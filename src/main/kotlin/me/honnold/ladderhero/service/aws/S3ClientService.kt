@@ -130,9 +130,9 @@ class S3ClientService(s3Region: Region, s3CredentialsProvider: AwsCredentialsPro
             }
 
         return DataBufferUtils.write(data, path, StandardOpenOption.CREATE_NEW)
-            .map { path }
             .doOnSuccess { logger.info("Saved file $uuid to $path") }
             .doOnError { logger.error(it.message) }
+            .then(Mono.just(path))
     }
 
     private fun concatBuffers(buffers: List<DataBuffer>): ByteBuffer {
