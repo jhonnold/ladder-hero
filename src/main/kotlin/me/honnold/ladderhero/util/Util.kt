@@ -11,10 +11,10 @@ fun windowsTimeToDate(time: Long): Date {
     return Date(epoch)
 }
 
-fun gameDuration(events: List<Event>): Int {
+fun gameDuration(events: List<Event>): Long {
     val firstLeaveEvent = events.find { it.name == "NNet.Game.SGameUserLeaveEvent" }
 
-    return if (firstLeaveEvent == null) 0 else floor(firstLeaveEvent.loop / 22.4).toInt()
+    return if (firstLeaveEvent == null) 0 else floor(firstLeaveEvent.loop / 22.4).toLong()
 }
 
 fun unescapeName(name: String): String = StringEscapeUtils.unescapeHtml4(name).replace("<sp/>", " ")

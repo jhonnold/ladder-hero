@@ -1,7 +1,7 @@
-CREATE TABLE public.player (
-	id uuid NOT NULL DEFAULT uuid_generate_v4(),
+CREATE TABLE public.players (
+	id uuid NOT NULL,
 	profile_id int NULL,
 	region_id int NULL,
 	realm_id int NULL,
-	CONSTRAINT player_pk PRIMARY KEY (id)
+	CONSTRAINT players_pk PRIMARY KEY (id)
 );

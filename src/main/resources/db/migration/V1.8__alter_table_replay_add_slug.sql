@@ -1,2 +1,2 @@
-ALTER TABLE public.replay ADD slug varchar(64) NULL;
-ALTER TABLE public.replay ADD CONSTRAINT replay_un UNIQUE (slug);
+ALTER TABLE public.replays ADD slug varchar(64) NULL;
+ALTER TABLE public.replays ADD CONSTRAINT replays_un_slug UNIQUE (slug);

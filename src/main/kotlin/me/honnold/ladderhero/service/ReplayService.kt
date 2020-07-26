@@ -2,12 +2,12 @@ package me.honnold.ladderhero.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.slugify.Slugify
-import me.honnold.ladderhero.model.db.FileUpload
-import me.honnold.ladderhero.model.db.Player
-import me.honnold.ladderhero.model.db.Replay
-import me.honnold.ladderhero.model.db.Summary
-import me.honnold.ladderhero.repository.FileUploadRepository
-import me.honnold.ladderhero.repository.ReplayRepository
+import me.honnold.ladderhero.domain.dao.FileUploadDAO
+import me.honnold.ladderhero.domain.dao.ReplayDAO
+import me.honnold.ladderhero.domain.model.FileUpload
+import me.honnold.ladderhero.domain.model.Player
+import me.honnold.ladderhero.domain.model.Replay
+import me.honnold.ladderhero.domain.model.Summary
 import me.honnold.ladderhero.service.aws.S3ClientService
 import me.honnold.ladderhero.util.gameDuration
 import me.honnold.ladderhero.util.windowsTimeToDate
@@ -18,15 +18,16 @@ import me.honnold.sc2protocol.model.data.Struct
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
+import reactor.core.scheduler.Scheduler
 import java.nio.file.Files
 import java.nio.file.Path
 
 @Service
 class ReplayService(
     private val s3ClientService: S3ClientService,
-    private val fileUploadRepository: FileUploadRepository,
+    private val fileUploadDAO: FileUploadDAO,
     private val playerService: PlayerService,
-    private val replayRepository: ReplayRepository,
+    private val replayDAO: ReplayDAO,
     private val summaryService: SummaryService
 ) {
     companion object {
@@ -39,9 +40,9 @@ class ReplayService(
         var data: ReplayData? = null
         val state = ProcessingState()
 
-        fileUpload.status = "PROCESSING"
+        fileUpload.status = FileUpload.Status.PROCESSING
 
-        return fileUploadRepository.save(fileUpload)
+        return fileUploadDAO.save(fileUpload)
             .flatMap { this.s3ClientService.download(it.key) }
             .map { data = this.loadReplayData(it) }
             .flatMap { this.buildReplay(fileUpload, data!!) }
@@ -53,9 +54,9 @@ class ReplayService(
             .flatMap { this.summaryService.populateSummary(it, data!!) }
             .collectList()
             .flatMap {
-                fileUpload.status = "COMPLETED"
+                fileUpload.status = FileUpload.Status.COMPLETED
 
-                this.fileUploadRepository.save(fileUpload)
+                this.fileUploadDAO.save(fileUpload)
             }
             .flatMap {
                 val replay = state.replay
@@ -86,19 +87,15 @@ class ReplayService(
                 }
             }
         val slug = slugger.slugify("${playedAt.time} $matchup $mapName")
-            .substring(0, 64)
 
-        val replay = Replay(
-            fileUploadId = upload.id,
-            mapName = mapName,
-            duration = duration,
-            playedAt = playedAt,
-            slug = slug
-        )
+        val replay = Replay()
+        replay.fileUploadId = upload.id
+        replay.mapName = mapName
+        replay.duration = duration
+        replay.playedAt = playedAt
+        replay.slug = slug
 
-        logger.debug("Attempting to save new $slug")
-        return this.replayRepository.save(replay)
-            .doOnSuccess { logger.info("Saved new replay $slug") }
+        return this.replayDAO.save(replay)
             .onErrorResume { logger.warn("The replay $slug has already been seen before"); Mono.empty() }
     }
 
@@ -128,7 +125,8 @@ class ReplayService(
             private const val GAME_EVENTS_FILE_NAME = "replay.game.events"
         }
 
-        val metadata = ObjectMapper().readValue(archive.getFileContents(METADATA_FILE_NAME).array(), Map::class.java)
+        val metadata: Map<*, *> =
+            ObjectMapper().readValue(archive.getFileContents(METADATA_FILE_NAME).array(), Map::class.java)
         val initData = this.protocol.decodeInitData(archive.getFileContents(INIT_DATA_FILE_NAME))
         val details = this.protocol.decodeDetails(archive.getFileContents(DETAILS_FILE_NAME))
         val trackerEvents = this.protocol.decodeTrackerEvents(archive.getFileContents(TRACKER_EVENTS_FILE_NAME))

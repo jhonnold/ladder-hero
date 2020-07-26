@@ -1,7 +1,7 @@
-CREATE TABLE public.file_upload (
-	id uuid NOT NULL DEFAULT uuid_generate_v4(),
+CREATE TABLE public.file_uploads (
+	id uuid NOT NULL,
 	"key" uuid NOT NULL,
 	orig_file_nm varchar(260) NOT NULL,
-	status varchar(16) NOT NULL,
-	CONSTRAINT file_upload_pk PRIMARY KEY (id)
+	status int NOT NULL,
+	CONSTRAINT file_uploads_pk PRIMARY KEY (id)
 );

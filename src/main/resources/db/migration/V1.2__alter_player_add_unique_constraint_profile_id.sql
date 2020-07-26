@@ -1,1 +1,1 @@
-ALTER TABLE public.player ADD CONSTRAINT player_profile_un UNIQUE (profile_id);
+ALTER TABLE public.players ADD CONSTRAINT player_profile_un UNIQUE (profile_id);

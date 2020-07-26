@@ -1,7 +1,7 @@
 package me.honnold.ladderhero.service
 
-import me.honnold.ladderhero.dao.PlayerDAO
-import me.honnold.ladderhero.model.db.Player
+import me.honnold.ladderhero.domain.dao.PlayerDAO
+import me.honnold.ladderhero.domain.model.Player
 import me.honnold.ladderhero.util.unescapeName
 import me.honnold.sc2protocol.model.data.Blob
 import me.honnold.sc2protocol.model.data.Struct
@@ -32,15 +32,15 @@ class PlayerService(private val playerDAO: PlayerDAO) {
                 val nameBlob: Blob = it["m_name"]
                 val name = unescapeName(nameBlob.value)
 
-                this.playerDAO.findOrCreatePlayer(
-                    Player(
-                        profileId = profileId.toInt(),
-                        regionId = regionId.toInt(),
-                        realmId = realmId.toInt()
-                    )
-                ).map { PlayerData(it, playerId.toInt() + 1, race, name) }
+                val player = Player()
+                player.profileId = profileId
+                player.regionId = regionId
+                player.realmId = realmId
+
+                this.playerDAO.findOrCreatePlayer(player)
+                    .map { PlayerData(it, playerId + 1, race, name) }
             }
     }
 
-    data class PlayerData(val player: Player, val id: Int, val race: String, val name: String)
+    data class PlayerData(val player: Player, val id: Long, val race: String, val name: String)
 }

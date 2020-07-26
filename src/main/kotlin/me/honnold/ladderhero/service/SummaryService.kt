@@ -1,10 +1,10 @@
 package me.honnold.ladderhero.service
 
-import me.honnold.ladderhero.model.db.Replay
-import me.honnold.ladderhero.model.db.Summary
-import me.honnold.ladderhero.model.db.SummarySnapshot
-import me.honnold.ladderhero.repository.SummaryRepository
-import me.honnold.ladderhero.repository.SummarySnapshotRepository
+import me.honnold.ladderhero.domain.dao.SummaryDAO
+import me.honnold.ladderhero.domain.dao.SummarySnapshotDAO
+import me.honnold.ladderhero.domain.model.Replay
+import me.honnold.ladderhero.domain.model.Summary
+import me.honnold.ladderhero.domain.model.SummarySnapshot
 import me.honnold.sc2protocol.model.data.Struct
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -15,23 +15,22 @@ import kotlin.math.max
 
 @Service
 class SummaryService(
-    private val summaryRepository: SummaryRepository,
-    private val summarySnapshotRepository: SummarySnapshotRepository
+    private val summaryDAO: SummaryDAO,
+    private val summarySnapshotDAO: SummarySnapshotDAO
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(SummaryService::class.java)
     }
 
     fun initializeSummary(replay: Replay, playerData: PlayerService.PlayerData): Mono<Summary> {
-        val summary = Summary(
-            replayId = replay.id,
-            playerId = playerData.player.id,
-            workingId = playerData.id,
-            race = playerData.race,
-            name = playerData.name
-        )
+        val summary = Summary()
+        summary.replayId = replay.id
+        summary.playerId = playerData.player.id
+        summary.workingId = playerData.id
+        summary.race = playerData.race
+        summary.name = playerData.name
 
-        return this.summaryRepository.save(summary)
+        return this.summaryDAO.save(summary)
             .doOnSuccess { logger.info("Successfully initialized summary for ${playerData.player.id} on ${replay.id} as $it") }
     }
 
@@ -46,7 +45,7 @@ class SummaryService(
                 false
             else {
                 val playerId: Long = it.data["m_playerId"]
-                playerId.toInt() == summary.workingId
+                playerId == summary.workingId
             }
         }
 
@@ -74,22 +73,22 @@ class SummaryService(
                 val armyValueMinerals = stats.getLong("m_scoreValueMineralsUsedCurrentArmy")
                 val armyValueVespene = stats.getLong("m_scoreValueVespeneUsedCurrentArmy")
 
-                SummarySnapshot(
-                    null,
-                    summary.id,
-                    it.loop,
-                    lostMinerals,
-                    lostVespene,
-                    unspentMinerals,
-                    unspentVespene,
-                    collectionRateMinerals,
-                    collectionRateVespene,
-                    activeWorkers,
-                    armyValueMinerals,
-                    armyValueVespene
-                )
+                val snapshot = SummarySnapshot()
+                snapshot.summaryId = summary.id
+                snapshot.loop = it.loop
+                snapshot.lostMinerals = lostMinerals
+                snapshot.lostVespene = lostVespene
+                snapshot.unspentMinerals = unspentMinerals
+                snapshot.unspentVespene = unspentVespene
+                snapshot.collectionRateMinerals = collectionRateMinerals
+                snapshot.collectionRateVespene = collectionRateVespene
+                snapshot.activeWorkers = activeWorkers
+                snapshot.armyValueMinerals = armyValueMinerals
+                snapshot.armyValueVespene = armyValueVespene
+
+                snapshot
             }
-            .flatMap { this.summarySnapshotRepository.save(it) }
+            .flatMap { this.summarySnapshotDAO.save(it) }
             .doOnNext { logger.trace("Saved $it") }
             .doOnComplete { logger.info("Successfully saved ${summaryStateEvents.size} summary snapshots for ${summary.id}") }
 
@@ -140,7 +139,7 @@ class SummaryService(
                 summary.avgCollectionRateMinerals = acc.t3 / max(1, acc.t5)
                 summary.avgCollectionRateVespene = acc.t4 / max(1, acc.t5)
 
-                this.summaryRepository.save(summary)
+                this.summaryDAO.save(summary)
                     .doOnSuccess { logger.info("Populated $summary") }
             }
     }

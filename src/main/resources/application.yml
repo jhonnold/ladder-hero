@@ -1,13 +1,10 @@
 spring:
-  r2dbc:
-    url: r2dbc:postgresql://localhost:5432/ladder-hero-dev
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ladder-hero-dev
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
-  flyway:
-    url: jdbc:postgresql://localhost:5432/ladder-hero-dev
-    user: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
     platform: postgres
+    maximum-pool-size: 128
 
 aws:
   s3:
