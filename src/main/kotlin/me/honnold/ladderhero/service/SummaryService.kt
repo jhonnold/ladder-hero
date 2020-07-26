@@ -2,14 +2,22 @@ package me.honnold.ladderhero.service
 
 import me.honnold.ladderhero.model.db.Replay
 import me.honnold.ladderhero.model.db.Summary
+import me.honnold.ladderhero.model.db.SummarySnapshot
 import me.honnold.ladderhero.repository.SummaryRepository
+import me.honnold.ladderhero.repository.SummarySnapshotRepository
 import me.honnold.sc2protocol.model.data.Struct
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.util.function.Tuples
+import kotlin.math.max
 
 @Service
-class SummaryService(private val summaryRepository: SummaryRepository) {
+class SummaryService(
+    private val summaryRepository: SummaryRepository,
+    private val summarySnapshotRepository: SummarySnapshotRepository
+) {
     companion object {
         private val logger = LoggerFactory.getLogger(SummaryService::class.java)
     }
@@ -34,7 +42,7 @@ class SummaryService(private val summaryRepository: SummaryRepository) {
         val maxGameLoop = firstLeaveGameEvent!!.loop
 
         val summaryStateEvents = data.trackerEvents.filter {
-            if (it.name != "NNet.Replay.Tracker.SPlayerStatsEvent")
+            if (it.name != "NNet.Replay.Tracker.SPlayerStatsEvent" || it.loop > maxGameLoop)
                 false
             else {
                 val playerId: Long = it.data["m_playerId"]
@@ -42,41 +50,99 @@ class SummaryService(private val summaryRepository: SummaryRepository) {
             }
         }
 
-        logger.debug("Found ${summaryStateEvents.size} events for ${summary.workingId}")
+        logger.debug("Found ${summaryStateEvents.size} stat events for ${summary.name} (${summary.workingId}) on ${summary.id}")
 
-        // TODO: Grab and store snapshots
+        val snapshots = Flux.fromIterable(summaryStateEvents)
+            .map {
+                val stats: Struct = it.data["m_stats"]
 
-        val finalSummaryStateEvent = summaryStateEvents.findLast { it.loop < maxGameLoop }!!
-        val stats: Struct = finalSummaryStateEvent.data["m_stats"]
+                val lostMinerals = stats.getLong("m_scoreValueMineralsLostArmy") +
+                        stats.getLong("m_scoreValueMineralsLostEconomy") +
+                        stats.getLong("m_scoreValueMineralsLostTechnology")
+                val lostVespene = stats.getLong("m_scoreValueVespeneLostArmy") +
+                        stats.getLong("m_scoreValueVespeneLostEconomy") +
+                        stats.getLong("m_scoreValueVespeneLostTechnology")
 
-        val collectedMinerals = stats.getLong("m_scoreValueMineralsCurrent") +
-                stats.getLong("m_scoreValueMineralsUsedInProgressArmy") +
-                stats.getLong("m_scoreValueMineralsUsedInProgressEconomy") +
-                stats.getLong("m_scoreValueMineralsUsedInProgressTechnology") +
-                stats.getLong("m_scoreValueMineralsUsedCurrentArmy") +
-                stats.getLong("m_scoreValueMineralsUsedCurrentEconomy") +
-                stats.getLong("m_scoreValueMineralsUsedCurrentTechnology") +
-                stats.getLong("m_scoreValueMineralsLostArmy") +
-                stats.getLong("m_scoreValueMineralsLostEconomy") +
-                stats.getLong("m_scoreValueMineralsLostTechnology")
+                val unspentMinerals = stats.getLong("m_scoreValueMineralsCurrent")
+                val unspentVespene = stats.getLong("m_scoreValueVespeneCurrent")
 
-        val collectedVespene = stats.getLong("m_scoreValueVespeneCurrent") +
-                stats.getLong("m_scoreValueVespeneUsedInProgressArmy") +
-                stats.getLong("m_scoreValueVespeneUsedInProgressEconomy") +
-                stats.getLong("m_scoreValueVespeneUsedInProgressTechnology") +
-                stats.getLong("m_scoreValueVespeneUsedCurrentArmy") +
-                stats.getLong("m_scoreValueVespeneUsedCurrentEconomy") +
-                stats.getLong("m_scoreValueVespeneUsedCurrentTechnology") +
-                stats.getLong("m_scoreValueVespeneLostArmy") +
-                stats.getLong("m_scoreValueVespeneLostEconomy") +
-                stats.getLong("m_scoreValueVespeneLostTechnology")
+                val collectionRateMinerals = stats.getLong("m_scoreValueMineralsCollectionRate")
+                val collectionRateVespene = stats.getLong("m_scoreValueVespeneCollectionRate")
 
-        val lostMinerals = stats.getLong("m_scoreValueMineralsLostArmy")
-        val lostVespene = stats.getLong("m_scoreValueVespeneLostArmy")
+                val activeWorkers = stats.getLong("m_scoreValueWorkersActiveCount")
 
-        logger.info("Found $collectedMinerals and $collectedVespene and $lostMinerals and $lostVespene")
+                val armyValueMinerals = stats.getLong("m_scoreValueMineralsUsedCurrentArmy")
+                val armyValueVespene = stats.getLong("m_scoreValueVespeneUsedCurrentArmy")
 
-        return Mono.empty()
+                SummarySnapshot(
+                    null,
+                    summary.id,
+                    it.loop,
+                    lostMinerals,
+                    lostVespene,
+                    unspentMinerals,
+                    unspentVespene,
+                    collectionRateMinerals,
+                    collectionRateVespene,
+                    activeWorkers,
+                    armyValueMinerals,
+                    armyValueVespene
+                )
+            }
+            .flatMap { this.summarySnapshotRepository.save(it) }
+            .doOnNext { logger.trace("Saved $it") }
+            .doOnComplete { logger.info("Successfully saved ${summaryStateEvents.size} summary snapshots for ${summary.id}") }
+
+        return snapshots.reduce(
+            Tuples.of(0L, 0L, 0L, 0L, 0),
+            { acc, snapshot ->
+                acc.mapT1 { it + snapshot.unspentMinerals }
+                    .mapT2 { it + snapshot.unspentVespene }
+                    .mapT3 { it + snapshot.collectionRateMinerals }
+                    .mapT4 { it + snapshot.collectionRateVespene }
+                    .mapT5 { it + 1 }
+            })
+            .flatMap { acc ->
+                val finalSummaryStateEvent = summaryStateEvents.findLast { e -> e.loop <= maxGameLoop }!!
+                val stats: Struct = finalSummaryStateEvent.data["m_stats"]
+
+                val lostMinerals = stats.getLong("m_scoreValueMineralsLostArmy") +
+                        stats.getLong("m_scoreValueMineralsLostEconomy") +
+                        stats.getLong("m_scoreValueMineralsLostTechnology")
+                val lostVespene = stats.getLong("m_scoreValueVespeneLostArmy") +
+                        stats.getLong("m_scoreValueVespeneLostEconomy") +
+                        stats.getLong("m_scoreValueVespeneLostTechnology")
+
+                val collectedMinerals = stats.getLong("m_scoreValueMineralsCurrent") +
+                        stats.getLong("m_scoreValueMineralsUsedInProgressArmy") +
+                        stats.getLong("m_scoreValueMineralsUsedInProgressEconomy") +
+                        stats.getLong("m_scoreValueMineralsUsedInProgressTechnology") +
+                        stats.getLong("m_scoreValueMineralsUsedCurrentArmy") +
+                        stats.getLong("m_scoreValueMineralsUsedCurrentEconomy") +
+                        stats.getLong("m_scoreValueMineralsUsedCurrentTechnology") +
+                        lostMinerals
+
+                val collectedVespene = stats.getLong("m_scoreValueVespeneCurrent") +
+                        stats.getLong("m_scoreValueVespeneUsedInProgressArmy") +
+                        stats.getLong("m_scoreValueVespeneUsedInProgressEconomy") +
+                        stats.getLong("m_scoreValueVespeneUsedInProgressTechnology") +
+                        stats.getLong("m_scoreValueVespeneUsedCurrentArmy") +
+                        stats.getLong("m_scoreValueVespeneUsedCurrentEconomy") +
+                        stats.getLong("m_scoreValueVespeneUsedCurrentTechnology") +
+                        lostVespene
+
+                summary.collectedMinerals = collectedMinerals
+                summary.collectedVespene = collectedVespene
+                summary.lostMinerals = lostMinerals
+                summary.lostVespene = lostVespene
+                summary.avgUnspentMinerals = acc.t1 / max(1, acc.t5)
+                summary.avgUnspentVespene = acc.t2 / max(1, acc.t5)
+                summary.avgCollectionRateMinerals = acc.t3 / max(1, acc.t5)
+                summary.avgCollectionRateVespene = acc.t4 / max(1, acc.t5)
+
+                this.summaryRepository.save(summary)
+                    .doOnSuccess { logger.info("Populated $summary") }
+            }
     }
 }
 
