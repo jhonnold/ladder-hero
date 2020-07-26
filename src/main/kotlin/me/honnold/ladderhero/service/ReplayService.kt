@@ -30,7 +30,7 @@ class ReplayService(
         private val defaultProtocol = Protocol(Protocol.DEFAULT)
     }
 
-    fun processNewReplay(fileUpload: FileUpload): Mono<Void> {
+    fun processNewReplay(fileUpload: FileUpload): Mono<Replay> {
         var data: ReplayData? = null
         val state = ProcessingState()
 
@@ -46,8 +46,20 @@ class ReplayService(
             .flatMap { this.summaryService.initializeSummary(state.replay!!, it) }
             .doOnNext { state.summaries.add(it) }
             .flatMap { this.summaryService.populateSummary(it, data!!) }
-            .then()
+            .collectList()
+            .flatMap {
+                fileUpload.status = "COMPLETED"
 
+                this.fileUploadRepository.save(fileUpload)
+            }
+            .flatMap {
+                val replay = state.replay
+                if (replay != null)
+                    Mono.just(replay)
+                else
+                    Mono.empty()
+            }
+            .doOnSuccess { logger.info("Finished processing $fileUpload, saved as ${state.replay}") }
     }
 
     private fun buildReplay(upload: FileUpload, data: ReplayData): Mono<Replay> {
