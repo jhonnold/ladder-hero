@@ -15,6 +15,7 @@ import me.honnold.sc2protocol.Protocol
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
+import java.nio.file.Files
 import java.nio.file.Path
 
 @Service
@@ -60,6 +61,10 @@ class ReplayService(
                     Mono.empty()
             }
             .doOnSuccess { logger.info("Finished processing $fileUpload, saved as ${state.replay}") }
+            .doFinally {
+                data?.archive?.close()
+                Files.delete(data!!.path)
+            }
     }
 
     private fun buildReplay(upload: FileUpload, data: ReplayData): Mono<Replay> {
@@ -87,7 +92,7 @@ class ReplayService(
 
         logger.info("Identified Protocol $buildNo for $path")
 
-        return ReplayData(buildNo.toInt(), archive, protocol)
+        return ReplayData(path, buildNo.toInt(), archive, protocol)
     }
 
     class ProcessingState {
@@ -96,7 +101,7 @@ class ReplayService(
         var summaries: MutableList<Summary> = ArrayList()
     }
 
-    class ReplayData(val buildNo: Int, val archive: Archive, val protocol: Protocol) {
+    class ReplayData(val path: Path, val buildNo: Int, val archive: Archive, val protocol: Protocol) {
         companion object {
             private const val METADATA_FILE_NAME = "replay.gamemetadata.json"
             private const val INIT_DATA_FILE_NAME = "replay.initData"

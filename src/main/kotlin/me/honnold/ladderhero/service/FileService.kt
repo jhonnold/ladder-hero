@@ -22,7 +22,7 @@ class FileService(
     fun handleUpload(files: Flux<FilePart>): Flux<FileUpload> {
         return files
             .doOnNext { logger.info("New replay received: ${it.filename()}") }
-            .flatMap { s3ClientService.upload(it) }
+            .flatMap({ s3ClientService.upload(it) }, 8)
             .map { FileUpload(key = UUID.fromString(it.first), fileName = it.second) }
             .flatMap { fileUploadRepository.save(it) }
             .doOnNext { logger.info("Saved $it") }
