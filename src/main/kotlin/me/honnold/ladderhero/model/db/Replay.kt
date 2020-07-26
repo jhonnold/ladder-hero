@@ -18,5 +18,7 @@ data class Replay(
     var duration: Int,
 
     @Column("played_at")
-    var playedAt: Date
+    var playedAt: Date,
+
+    var slug: String? = null
 )

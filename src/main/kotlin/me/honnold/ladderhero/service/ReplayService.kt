@@ -1,6 +1,7 @@
 package me.honnold.ladderhero.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.github.slugify.Slugify
 import me.honnold.ladderhero.model.db.FileUpload
 import me.honnold.ladderhero.model.db.Player
 import me.honnold.ladderhero.model.db.Replay
@@ -12,6 +13,8 @@ import me.honnold.ladderhero.util.gameDuration
 import me.honnold.ladderhero.util.windowsTimeToDate
 import me.honnold.mpq.Archive
 import me.honnold.sc2protocol.Protocol
+import me.honnold.sc2protocol.model.data.Blob
+import me.honnold.sc2protocol.model.data.Struct
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
@@ -29,6 +32,7 @@ class ReplayService(
     companion object {
         private val logger = LoggerFactory.getLogger(ReplayService::class.java)
         private val defaultProtocol = Protocol(Protocol.DEFAULT)
+        private val slugger = Slugify()
     }
 
     fun processNewReplay(fileUpload: FileUpload): Mono<Replay> {
@@ -72,16 +76,30 @@ class ReplayService(
         val playedAt = windowsTimeToDate(data.details["m_timeUTC"])
         val duration = gameDuration(data.gameEvents)
 
+        val players: List<Struct> = data.details["m_playerList"]
+        val matchup = players
+            .groupBy { val team: Long = it["m_teamId"]; team }
+            .values.joinToString("-") {
+                it.joinToString("") {
+                    val raceBlob: Blob = it["m_race"]
+                    raceBlob.value[0].toString()
+                }
+            }
+        val slug = slugger.slugify("${playedAt.time} $matchup $mapName")
+            .substring(0, 64)
+
         val replay = Replay(
             fileUploadId = upload.id,
             mapName = mapName,
             duration = duration,
-            playedAt = playedAt
+            playedAt = playedAt,
+            slug = slug
         )
 
-        logger.debug("Attempting to save new $replay")
+        logger.debug("Attempting to save new $slug")
         return this.replayRepository.save(replay)
-            .doOnSuccess { logger.info("Saved new $replay") }
+            .doOnSuccess { logger.info("Saved new replay $slug") }
+            .onErrorResume { logger.warn("The replay $slug has already been seen before"); Mono.empty() }
     }
 
     private fun loadReplayData(path: Path): ReplayData {
