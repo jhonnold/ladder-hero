@@ -1,12 +1,16 @@
 package me.honnold.ladderhero.domain.model
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo
+import com.fasterxml.jackson.annotation.ObjectIdGenerators
 import org.hibernate.annotations.GenericGenerator
 import java.util.*
-import javax.persistence.Column
-import javax.persistence.Entity
-import javax.persistence.GeneratedValue
-import javax.persistence.Id
+import javax.persistence.*
+import kotlin.collections.HashSet
 
+@JsonIdentityInfo(
+    generator = ObjectIdGenerators.PropertyGenerator::class,
+    property = "id"
+)
 @Entity(name = "replays")
 open class Replay {
     @Id
@@ -15,7 +19,11 @@ open class Replay {
     @Column(name = "id", updatable = false, nullable = false)
     open var id: UUID? = null
 
-    @Column(name = "file_upload_id")
+    @OneToOne
+    @JoinColumn(name = "file_upload_id")
+    open var fileUpload: FileUpload? = null
+
+    @Column(name = "file_upload_id", insertable = false, updatable = false)
     open var fileUploadId: UUID? = null
 
     @Column(name = "map_nm")
@@ -29,6 +37,9 @@ open class Replay {
 
     @Column(name = "slug", unique = true)
     open lateinit var slug: String
+
+    @OneToMany(mappedBy = "replay", targetEntity = Summary::class, fetch = FetchType.EAGER)
+    open var summaries: Set<Summary> = HashSet()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

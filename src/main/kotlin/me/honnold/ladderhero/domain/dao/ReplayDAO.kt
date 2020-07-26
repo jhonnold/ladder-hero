@@ -2,6 +2,7 @@ package me.honnold.ladderhero.domain.dao
 
 import me.honnold.ladderhero.domain.model.Replay
 import me.honnold.ladderhero.domain.repository.ReplayRepository
+import org.hibernate.Hibernate
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
@@ -20,9 +21,9 @@ class ReplayDAO(
         private val logger = LoggerFactory.getLogger(ReplayDAO::class.java)
     }
 
-    fun findAll(page: PageRequest?): Flux<Replay> =
+    fun findAll(page: PageRequest): Flux<Replay> =
         Flux.defer {
-            Flux.fromIterable(if (page != null) this.replayRepository.findAll(page) else this.replayRepository.findAll())
+            Flux.fromIterable(this.replayRepository.findAll(page))
         }
             .doFirst { logger.debug("Finding replays for $page") }
             .doOnComplete { logger.debug("Successfully loaded $page of replays") }

@@ -14,7 +14,7 @@ import reactor.core.publisher.Flux
 
 @RestController
 @RequestMapping("/api/v1/replays")
-class ReplayController(private val fileService: FileService, private val replayDAO: ReplayDAO) {
+open class ReplayController(private val fileService: FileService, private val replayDAO: ReplayDAO) {
     companion object {
         private val logger = LoggerFactory.getLogger(ReplayController::class.java)
     }
@@ -25,7 +25,7 @@ class ReplayController(private val fileService: FileService, private val replayD
     }
 
     @GetMapping
-    fun getReplays(
+    open fun getReplays(
         @RequestParam(defaultValue = "1") page: Int,
         @RequestParam(defaultValue = "25") size: Int
     ): Flux<Replay> {

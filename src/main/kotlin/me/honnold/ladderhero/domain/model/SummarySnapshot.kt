@@ -1,12 +1,15 @@
 package me.honnold.ladderhero.domain.model
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo
+import com.fasterxml.jackson.annotation.ObjectIdGenerators
 import org.hibernate.annotations.GenericGenerator
 import java.util.*
-import javax.persistence.Column
-import javax.persistence.Entity
-import javax.persistence.GeneratedValue
-import javax.persistence.Id
+import javax.persistence.*
 
+@JsonIdentityInfo(
+    generator = ObjectIdGenerators.PropertyGenerator::class,
+    property = "id"
+)
 @Entity(name = "summary_snapshots")
 open class SummarySnapshot {
     @Id
@@ -15,7 +18,11 @@ open class SummarySnapshot {
     @Column(name = "id", updatable = false, nullable = false)
     open var id: UUID? = null
 
-    @Column(name = "summary_id")
+    @ManyToOne
+    @JoinColumn(name = "summary_id")
+    open var summary: Summary? = null
+
+    @Column(name = "summary_id", insertable = false, updatable = false)
     open var summaryId: UUID? = null
 
     @Column(name = "loop")

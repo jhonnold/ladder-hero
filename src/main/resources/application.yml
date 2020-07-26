@@ -6,6 +6,9 @@ spring:
     platform: postgres
     maximum-pool-size: 128
 
+hibernate:
+  enable_lazy_load_no_trans: true
+
 aws:
   s3:
     region: us-east-2

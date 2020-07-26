@@ -4,6 +4,7 @@ import me.honnold.ladderhero.domain.model.FileUpload
 import me.honnold.ladderhero.domain.repository.FileUploadRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.support.TransactionTemplate
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Scheduler

@@ -19,5 +19,7 @@ open class DatabaseConfig {
     open fun jdbcScheduler(): Scheduler = Schedulers.fromExecutor(Executors.newFixedThreadPool(poolSize))
 
     @Bean
-    open fun transactionTemplate(transactionManager: PlatformTransactionManager): TransactionTemplate = TransactionTemplate(transactionManager)
+    open fun transactionTemplate(transactionManager: PlatformTransactionManager): TransactionTemplate {
+        return TransactionTemplate(transactionManager)
+    }
 }

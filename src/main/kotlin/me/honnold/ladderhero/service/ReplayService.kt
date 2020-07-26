@@ -89,7 +89,7 @@ class ReplayService(
         val slug = slugger.slugify("${playedAt.time} $matchup $mapName")
 
         val replay = Replay()
-        replay.fileUploadId = upload.id
+        replay.fileUpload = upload
         replay.mapName = mapName
         replay.duration = duration
         replay.playedAt = playedAt

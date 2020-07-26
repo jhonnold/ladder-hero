@@ -24,8 +24,8 @@ class SummaryService(
 
     fun initializeSummary(replay: Replay, playerData: PlayerService.PlayerData): Mono<Summary> {
         val summary = Summary()
-        summary.replayId = replay.id
-        summary.playerId = playerData.player.id
+        summary.replay = replay
+        summary.player = playerData.player
         summary.workingId = playerData.id
         summary.race = playerData.race
         summary.name = playerData.name
@@ -74,7 +74,7 @@ class SummaryService(
                 val armyValueVespene = stats.getLong("m_scoreValueVespeneUsedCurrentArmy")
 
                 val snapshot = SummarySnapshot()
-                snapshot.summaryId = summary.id
+                snapshot.summary = summary
                 snapshot.loop = it.loop
                 snapshot.lostMinerals = lostMinerals
                 snapshot.lostVespene = lostVespene

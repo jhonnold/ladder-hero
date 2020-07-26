@@ -1,9 +1,15 @@
 package me.honnold.ladderhero.domain.model
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo
+import com.fasterxml.jackson.annotation.ObjectIdGenerators
 import org.hibernate.annotations.GenericGenerator
 import java.util.*
 import javax.persistence.*
 
+@JsonIdentityInfo(
+    generator = ObjectIdGenerators.PropertyGenerator::class,
+    property = "id"
+)
 @Entity(name = "file_uploads")
 open class FileUpload {
     @Id
