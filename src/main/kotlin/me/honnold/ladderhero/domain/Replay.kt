@@ -1,4 +1,4 @@
-package me.honnold.ladderhero.model.db
+package me.honnold.ladderhero.domain
 
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Column
@@ -15,7 +15,7 @@ data class Replay(
     var mapName: String,
 
     @Column("dur_s")
-    var duration: Int,
+    var duration: Long,
 
     @Column("played_at")
     var playedAt: Date,

@@ -1,6 +1,6 @@
 package me.honnold.ladderhero.controller
 
-import me.honnold.ladderhero.model.db.FileUpload
+import me.honnold.ladderhero.domain.FileUpload
 import me.honnold.ladderhero.service.FileService
 import org.slf4j.LoggerFactory
 import org.springframework.http.MediaType

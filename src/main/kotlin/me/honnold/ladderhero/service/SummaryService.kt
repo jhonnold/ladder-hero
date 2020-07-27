@@ -1,8 +1,8 @@
 package me.honnold.ladderhero.service
 
-import me.honnold.ladderhero.model.db.Replay
-import me.honnold.ladderhero.model.db.Summary
-import me.honnold.ladderhero.model.db.SummarySnapshot
+import me.honnold.ladderhero.domain.Replay
+import me.honnold.ladderhero.domain.Summary
+import me.honnold.ladderhero.domain.SummarySnapshot
 import me.honnold.ladderhero.repository.SummaryRepository
 import me.honnold.ladderhero.repository.SummarySnapshotRepository
 import me.honnold.sc2protocol.model.data.Struct
@@ -23,15 +23,15 @@ class SummaryService(
     }
 
     fun initializeSummary(replay: Replay, playerData: PlayerService.PlayerData): Mono<Summary> {
-        val summary = Summary(
-            replayId = replay.id,
-            playerId = playerData.player.id,
-            workingId = playerData.id,
-            race = playerData.race,
-            name = playerData.name
+        return this.summaryRepository.save(
+            Summary(
+                replayId = replay.id,
+                playerId = playerData.player.id,
+                workingId = playerData.id,
+                race = playerData.race,
+                name = playerData.name
+            )
         )
-
-        return this.summaryRepository.save(summary)
             .doOnSuccess { logger.info("Successfully initialized summary for ${playerData.player.id} on ${replay.id} as $it") }
     }
 
@@ -39,14 +39,16 @@ class SummaryService(
         logger.debug("Starting to populate stats for $summary")
 
         val firstLeaveGameEvent = data.gameEvents.find { it.name == "NNet.Game.SGameUserLeaveEvent" }
-        val maxGameLoop = firstLeaveGameEvent!!.loop
+            ?: return Mono.empty()
+
+        val maxGameLoop = firstLeaveGameEvent.loop
 
         val summaryStateEvents = data.trackerEvents.filter {
             if (it.name != "NNet.Replay.Tracker.SPlayerStatsEvent" || it.loop > maxGameLoop)
                 false
             else {
                 val playerId: Long = it.data["m_playerId"]
-                playerId.toInt() == summary.workingId
+                playerId == summary.workingId
             }
         }
 
@@ -89,7 +91,8 @@ class SummaryService(
                     armyValueVespene
                 )
             }
-            .flatMap { this.summarySnapshotRepository.save(it) }
+            .collectList()
+            .flatMapMany { this.summarySnapshotRepository.saveAll(it) }
             .doOnNext { logger.trace("Saved $it") }
             .doOnComplete { logger.info("Successfully saved ${summaryStateEvents.size} summary snapshots for ${summary.id}") }
 
@@ -103,7 +106,9 @@ class SummaryService(
                     .mapT5 { it + 1 }
             })
             .flatMap { acc ->
-                val finalSummaryStateEvent = summaryStateEvents.findLast { e -> e.loop <= maxGameLoop }!!
+                val finalSummaryStateEvent = summaryStateEvents.findLast { e -> e.loop <= maxGameLoop }
+                    ?: return@flatMap Mono.empty<Summary>()
+
                 val stats: Struct = finalSummaryStateEvent.data["m_stats"]
 
                 val lostMinerals = stats.getLong("m_scoreValueMineralsLostArmy") +

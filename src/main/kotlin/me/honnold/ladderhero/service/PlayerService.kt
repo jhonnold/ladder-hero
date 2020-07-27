@@ -1,16 +1,17 @@
 package me.honnold.ladderhero.service
 
-import me.honnold.ladderhero.dao.PlayerDAO
-import me.honnold.ladderhero.model.db.Player
+import me.honnold.ladderhero.domain.Player
+import me.honnold.ladderhero.repository.PlayerRepository
 import me.honnold.ladderhero.util.unescapeName
 import me.honnold.sc2protocol.model.data.Blob
 import me.honnold.sc2protocol.model.data.Struct
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 
 @Service
-class PlayerService(private val playerDAO: PlayerDAO) {
+class PlayerService(private val playerRepository: PlayerRepository) {
     companion object {
         private val logger = LoggerFactory.getLogger(PlayerService::class.java)
     }
@@ -32,15 +33,29 @@ class PlayerService(private val playerDAO: PlayerDAO) {
                 val nameBlob: Blob = it["m_name"]
                 val name = unescapeName(nameBlob.value)
 
-                this.playerDAO.findOrCreatePlayer(
-                    Player(
-                        profileId = profileId.toInt(),
-                        regionId = regionId.toInt(),
-                        realmId = realmId.toInt()
-                    )
-                ).map { PlayerData(it, playerId.toInt() + 1, race, name) }
+                this.playerRepository.existsByProfileId(profileId)
+                    .flatMap { exists ->
+                        if (exists)
+                            this.playerRepository.findByProfileId(profileId)
+                        else
+                            this.save(profileId, regionId, realmId)
+                                .onErrorResume {
+                                    logger.warn("Conflict on saving player with $profileId, attempting lookup again...")
+                                    this.playerRepository.findByProfileId(profileId)
+                                }
+                    }
+                    .map { p -> PlayerData(p, playerId + 1, race, name) }
             }
     }
 
-    data class PlayerData(val player: Player, val id: Int, val race: String, val name: String)
+    fun save(profileId: Long, regionId: Long, realmId: Long): Mono<Player> {
+        val player = Player(profileId = profileId, regionId = regionId, realmId = realmId)
+
+        return this.playerRepository.save(player)
+            .doFirst { logger.debug("Saving new player ($profileId)") }
+            .doOnSuccess { logger.debug("Successfully saved new $it") }
+            .doOnError { logger.error("Unable to save new player ($profileId) -- ${it.message}") }
+    }
+
+    data class PlayerData(val player: Player, val id: Long, val race: String, val name: String)
 }

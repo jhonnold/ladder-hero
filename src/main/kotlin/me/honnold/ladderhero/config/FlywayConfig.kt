@@ -1,4 +1,4 @@
-package me.honnold.ladderhero.config.db
+package me.honnold.ladderhero.config
 
 import org.flywaydb.core.Flyway
 import org.springframework.boot.autoconfigure.flyway.FlywayProperties

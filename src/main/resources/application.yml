@@ -3,6 +3,8 @@ spring:
     url: r2dbc:postgresql://localhost:5432/ladder-hero-dev
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+    max-size: 64
+
   flyway:
     url: jdbc:postgresql://localhost:5432/ladder-hero-dev
     user: ${DB_USERNAME}

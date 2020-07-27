@@ -1,4 +1,4 @@
-package me.honnold.ladderhero.model.db
+package me.honnold.ladderhero.domain
 
 import org.springframework.data.annotation.Id
 import java.util.*
@@ -10,7 +10,7 @@ data class Summary(
     var replayId: UUID?,
     var playerId: UUID?,
 
-    var workingId: Int,
+    var workingId: Long,
     var race: String,
     var name: String,
     var collectedMinerals: Long = 0,

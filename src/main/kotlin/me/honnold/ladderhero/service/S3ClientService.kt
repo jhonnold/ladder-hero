@@ -1,4 +1,4 @@
-package me.honnold.ladderhero.service.aws
+package me.honnold.ladderhero.service
 
 import org.slf4j.LoggerFactory
 import org.springframework.core.io.buffer.DataBuffer
@@ -104,7 +104,7 @@ class S3ClientService(s3Region: Region, s3CredentialsProvider: AwsCredentialsPro
                 if (it.sdkHttpResponse() == null || !it.sdkHttpResponse().isSuccessful)
                     throw RuntimeException("Upload failed!")
 
-                logger.info("Successful upload of ${filePart.filename()} to ${this.s3Bucket}")
+                logger.info("Successfully uploaded ${filePart.filename()} to ${this.s3Bucket}")
                 Pair(fileKey, filePart.filename())
             }
     }
@@ -118,7 +118,12 @@ class S3ClientService(s3Region: Region, s3CredentialsProvider: AwsCredentialsPro
             .key(uuid.toString())
             .build()
 
-        val requestMono = Mono.fromFuture(this.s3Client.getObject(request, FluxResponseProvider()))
+        val requestMono = Mono.fromFuture(
+            this.s3Client.getObject(
+                request,
+                FluxResponseProvider()
+            )
+        )
 
         val data = Flux.from(requestMono)
             .flatMap {

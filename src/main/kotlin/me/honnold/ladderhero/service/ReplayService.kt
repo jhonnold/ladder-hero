@@ -2,13 +2,10 @@ package me.honnold.ladderhero.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.slugify.Slugify
-import me.honnold.ladderhero.model.db.FileUpload
-import me.honnold.ladderhero.model.db.Player
-import me.honnold.ladderhero.model.db.Replay
-import me.honnold.ladderhero.model.db.Summary
+import me.honnold.ladderhero.domain.FileUpload
+import me.honnold.ladderhero.domain.Replay
 import me.honnold.ladderhero.repository.FileUploadRepository
 import me.honnold.ladderhero.repository.ReplayRepository
-import me.honnold.ladderhero.service.aws.S3ClientService
 import me.honnold.ladderhero.util.gameDuration
 import me.honnold.ladderhero.util.windowsTimeToDate
 import me.honnold.mpq.Archive
@@ -35,43 +32,51 @@ class ReplayService(
         private val slugger = Slugify()
     }
 
-    fun processNewReplay(fileUpload: FileUpload): Mono<Replay> {
+    fun processNewReplay(fileUpload: FileUpload): Mono<FileUpload> {
         var data: ReplayData? = null
-        val state = ProcessingState()
 
-        fileUpload.status = "PROCESSING"
-
-        return fileUploadRepository.save(fileUpload)
-            .flatMap { this.s3ClientService.download(it.key) }
-            .map { data = this.loadReplayData(it) }
-            .flatMap { this.buildReplay(fileUpload, data!!) }
-            .doOnNext { state.replay = it }
-            .flatMapMany { this.playerService.buildPlayers(data!!) }
-            .doOnNext { state.players.add(it.player) }
-            .flatMap { this.summaryService.initializeSummary(state.replay!!, it) }
-            .doOnNext { state.summaries.add(it) }
-            .flatMap { this.summaryService.populateSummary(it, data!!) }
+        return Mono.just(1)
+            .flatMap {
+                fileUpload.status = "PROCESSING"; this.fileUploadRepository.save(fileUpload)
+            }
+            .flatMap { uploadRecord ->
+                this.s3ClientService.download(uploadRecord.key)
+                    .doOnSuccess { data = this.loadReplayData(it) }
+            }
+            .flatMap {
+                this.buildReplay(fileUpload, data!!)
+            }
+            .flatMapMany { replay ->
+                this.playerService.buildPlayers(data!!)
+                    .map { Pair(replay, it) }
+            }
+            .flatMap {
+                this.summaryService.initializeSummary(it.first, it.second)
+            }
+            .flatMap {
+                this.summaryService.populateSummary(it, data!!)
+            }
             .collectList()
             .flatMap {
-                fileUpload.status = "COMPLETED"
-
-                this.fileUploadRepository.save(fileUpload)
+                fileUpload.status = "COMPLETED"; this.fileUploadRepository.save(fileUpload)
             }
-            .flatMap {
-                val replay = state.replay
-                if (replay != null)
-                    Mono.just(replay)
-                else
-                    Mono.empty()
+            .doOnSuccess {
+                logger.info("Finished processing $fileUpload")
             }
-            .doOnSuccess { logger.info("Finished processing $fileUpload, saved as ${state.replay}") }
+            .doOnError {
+                logger.error("Unable to process $fileUpload -- ${it.message}")
+            }
+            .onErrorResume {
+                fileUpload.status = "FAILED"; this.fileUploadRepository.save(fileUpload)
+            }
             .doFinally {
                 data?.archive?.close()
                 Files.delete(data!!.path)
             }
+
     }
 
-    private fun buildReplay(upload: FileUpload, data: ReplayData): Mono<Replay> {
+    private fun buildReplay(upload: FileUpload?, data: ReplayData): Mono<Replay> {
         val mapName = data.metadata["Title"] as String
         val playedAt = windowsTimeToDate(data.details["m_timeUTC"])
         val duration = gameDuration(data.gameEvents)
@@ -86,19 +91,19 @@ class ReplayService(
                 }
             }
         val slug = slugger.slugify("${playedAt.time} $matchup $mapName")
-            .substring(0, 64)
-
-        val replay = Replay(
-            fileUploadId = upload.id,
-            mapName = mapName,
-            duration = duration,
-            playedAt = playedAt,
-            slug = slug
-        )
 
         logger.debug("Attempting to save new $slug")
-        return this.replayRepository.save(replay)
-            .doOnSuccess { logger.info("Saved new replay $slug") }
+        return this.replayRepository.save(
+            Replay(
+                fileUploadId = upload?.id,
+                mapName = mapName,
+                duration = duration,
+                playedAt = playedAt,
+                slug = slug
+            )
+        )
+            .doOnSuccess { logger.info("Saved new replay ($slug)") }
+            .doOnError { logger.error("Unable to save replay ($slug) -- ${it.message}") }
             .onErrorResume { logger.warn("The replay $slug has already been seen before"); Mono.empty() }
     }
 
@@ -110,16 +115,10 @@ class ReplayService(
 
         logger.info("Identified Protocol $buildNo for $path")
 
-        return ReplayData(path, buildNo.toInt(), archive, protocol)
+        return ReplayData(path, buildNo, archive, protocol)
     }
 
-    class ProcessingState {
-        var replay: Replay? = null
-        var players: MutableList<Player> = ArrayList()
-        var summaries: MutableList<Summary> = ArrayList()
-    }
-
-    class ReplayData(val path: Path, val buildNo: Int, val archive: Archive, val protocol: Protocol) {
+    class ReplayData(val path: Path, val buildNo: Long, val archive: Archive, val protocol: Protocol) {
         companion object {
             private const val METADATA_FILE_NAME = "replay.gamemetadata.json"
             private const val INIT_DATA_FILE_NAME = "replay.initData"
@@ -128,7 +127,8 @@ class ReplayService(
             private const val GAME_EVENTS_FILE_NAME = "replay.game.events"
         }
 
-        val metadata = ObjectMapper().readValue(archive.getFileContents(METADATA_FILE_NAME).array(), Map::class.java)
+        val metadata: Map<*, *> =
+            ObjectMapper().readValue(archive.getFileContents(METADATA_FILE_NAME).array(), Map::class.java)
         val initData = this.protocol.decodeInitData(archive.getFileContents(INIT_DATA_FILE_NAME))
         val details = this.protocol.decodeDetails(archive.getFileContents(DETAILS_FILE_NAME))
         val trackerEvents = this.protocol.decodeTrackerEvents(archive.getFileContents(TRACKER_EVENTS_FILE_NAME))
