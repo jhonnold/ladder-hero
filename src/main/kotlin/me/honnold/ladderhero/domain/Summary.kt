@@ -1,7 +1,9 @@
 package me.honnold.ladderhero.domain
 
 import org.springframework.data.annotation.Id
+import org.springframework.data.annotation.Transient
 import java.util.*
+import kotlin.collections.HashSet
 
 data class Summary(
     @Id
@@ -21,4 +23,13 @@ data class Summary(
     var avgUnspentVespene: Long = 0,
     var avgCollectionRateMinerals: Long = 0,
     var avgCollectionRateVespene: Long = 0
-)
+) {
+    @Transient
+    var replay: Replay? = null
+
+    @Transient
+    var player: Player? = null
+
+    @Transient
+    var snapshots: Set<SummarySnapshot> = HashSet()
+}

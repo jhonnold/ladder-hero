@@ -1,6 +1,7 @@
 package me.honnold.ladderhero.domain
 
 import org.springframework.data.annotation.Id
+import org.springframework.data.annotation.Transient
 import org.springframework.data.relational.core.mapping.Column
 import java.util.*
 
@@ -14,4 +15,7 @@ data class FileUpload(
     var fileName: String,
 
     var status: String = "WAITING"
-)
+) {
+    @Transient
+    var replay: Replay? = null
+}

@@ -1,6 +1,7 @@
 package me.honnold.ladderhero.domain
 
 import org.springframework.data.annotation.Id
+import org.springframework.data.annotation.Transient
 import java.util.*
 
 data class SummarySnapshot(
@@ -24,4 +25,7 @@ data class SummarySnapshot(
 
     var armyValueMinerals: Long = 0,
     var armyValueVespene: Long = 0
-)
+) {
+    @Transient
+    var summary: Summary? = null
+}

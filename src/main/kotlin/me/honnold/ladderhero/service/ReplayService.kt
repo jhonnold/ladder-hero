@@ -5,7 +5,9 @@ import com.github.slugify.Slugify
 import me.honnold.ladderhero.domain.FileUpload
 import me.honnold.ladderhero.domain.Replay
 import me.honnold.ladderhero.repository.FileUploadRepository
+import me.honnold.ladderhero.repository.PlayerRepository
 import me.honnold.ladderhero.repository.ReplayRepository
+import me.honnold.ladderhero.repository.SummaryRepository
 import me.honnold.ladderhero.util.gameDuration
 import me.honnold.ladderhero.util.windowsTimeToDate
 import me.honnold.mpq.Archive
@@ -13,10 +15,13 @@ import me.honnold.sc2protocol.Protocol
 import me.honnold.sc2protocol.model.data.Blob
 import me.honnold.sc2protocol.model.data.Struct
 import org.slf4j.LoggerFactory
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.nio.file.Files
 import java.nio.file.Path
+import java.time.ZoneOffset
 
 @Service
 class ReplayService(
@@ -24,12 +29,33 @@ class ReplayService(
     private val fileUploadRepository: FileUploadRepository,
     private val playerService: PlayerService,
     private val replayRepository: ReplayRepository,
+    private val summaryRepository: SummaryRepository,
+    private val playerRepository: PlayerRepository,
     private val summaryService: SummaryService
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(ReplayService::class.java)
         private val defaultProtocol = Protocol(Protocol.DEFAULT)
         private val slugger = Slugify()
+    }
+
+    fun getReplays(page: Pageable): Flux<Replay> {
+        return this.replayRepository.findPage(page.pageSize, page.offset)
+            .flatMap { replay ->
+                this.summaryRepository.getSummariesForReplayId(replay.id!!)
+                    .flatMap { summary ->
+                        this.playerRepository.findById(summary.playerId!!)
+                            .map { player ->
+                                summary.player = player
+                                summary
+                            }
+                    }
+                    .collectList()
+                    .map { summaries ->
+                        replay.summaries = summaries.toSet()
+                        replay
+                    }
+            }
     }
 
     fun processNewReplay(fileUpload: FileUpload): Mono<FileUpload> {
@@ -90,7 +116,7 @@ class ReplayService(
                     raceBlob.value[0].toString()
                 }
             }
-        val slug = slugger.slugify("${playedAt.time} $matchup $mapName")
+        val slug = slugger.slugify("$matchup $mapName ${playedAt.toEpochSecond(ZoneOffset.UTC)}")
 
         logger.debug("Attempting to save new $slug")
         return this.replayRepository.save(

@@ -1,7 +1,9 @@
 package me.honnold.ladderhero.domain
 
 import org.springframework.data.annotation.Id
+import org.springframework.data.annotation.Transient
 import java.util.*
+import kotlin.collections.HashSet
 
 data class Player(
     @Id
@@ -9,4 +11,7 @@ data class Player(
     var profileId: Long,
     var regionId: Long,
     var realmId: Long
-)
+) {
+    @Transient
+    var summaries: Set<Summary> = HashSet()
+}

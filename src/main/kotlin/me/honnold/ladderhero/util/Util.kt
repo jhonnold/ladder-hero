@@ -2,13 +2,15 @@ package me.honnold.ladderhero.util
 
 import me.honnold.sc2protocol.model.event.Event
 import org.apache.commons.text.StringEscapeUtils
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.*
 import kotlin.math.floor
 
-fun windowsTimeToDate(time: Long): Date {
+fun windowsTimeToDate(time: Long): LocalDateTime {
     val epoch = time / 10_000 - 11_644_473_600_000
 
-    return Date(epoch)
+    return LocalDateTime.ofEpochSecond(epoch, 0, ZoneOffset.UTC)
 }
 
 fun gameDuration(events: List<Event>): Long {
