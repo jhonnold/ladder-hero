@@ -6,6 +6,7 @@ import me.honnold.ladderhero.dao.domain.SummarySnapshot
 import me.honnold.ladderhero.repository.PlayerRepository
 import me.honnold.ladderhero.repository.SummaryRepository
 import me.honnold.ladderhero.repository.SummarySnapshotRepository
+import me.honnold.ladderhero.service.dto.replay.ReplayData
 import me.honnold.ladderhero.util.getLong
 import me.honnold.sc2protocol.model.data.Struct
 import org.slf4j.LoggerFactory
@@ -52,7 +53,7 @@ class SummaryService(
             .doOnSuccess { logger.info("Successfully initialized summary for ${playerData.player.id} on ${replay.id} as $it") }
     }
 
-    fun populateSummary(summary: Summary, data: ProcessingService.ReplayProcessingData): Mono<Summary> {
+    fun populateSummary(summary: Summary, data: ReplayData): Mono<Summary> {
         logger.debug("Starting to populate stats for $summary")
 
         val firstLeaveGameEvent = data.gameEvents.find { it.name == "NNet.Game.SGameUserLeaveEvent" }

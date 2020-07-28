@@ -5,8 +5,9 @@ import me.honnold.ladderhero.dao.domain.FileUpload
 import me.honnold.ladderhero.dao.domain.Replay
 import me.honnold.ladderhero.repository.ReplayRepository
 import me.honnold.ladderhero.repository.SummaryRepository
-import me.honnold.ladderhero.service.ProcessingService
+import me.honnold.ladderhero.service.ReplayProcessingService
 import me.honnold.ladderhero.service.SummaryService
+import me.honnold.ladderhero.service.dto.replay.ReplayData
 import me.honnold.ladderhero.util.gameDuration
 import me.honnold.ladderhero.util.windowsTimeToDate
 import me.honnold.sc2protocol.model.data.Blob
@@ -63,12 +64,12 @@ class ReplayService(
             }
     }
 
-    fun initializeReplay(upload: FileUpload?, processingData: ProcessingService.ReplayProcessingData): Mono<Replay> {
-        val mapName = processingData.metadata["Title"] as String
-        val playedAt = windowsTimeToDate(processingData.details["m_timeUTC"])
-        val duration = gameDuration(processingData.gameEvents)
+    fun buildAndSaveReplay(replayData: ReplayData): Mono<Replay> {
+        val mapName = replayData.metadata["Title"] as String
+        val playedAt = windowsTimeToDate(replayData.details["m_timeUTC"])
+        val duration = gameDuration(replayData.gameEvents)
 
-        val players: List<Struct> = processingData.details["m_playerList"]
+        val players: List<Struct> = replayData.details["m_playerList"]
         val matchup = players
             .groupBy { val team: Long = it["m_teamId"]; team }
             .values.joinToString("-") {
@@ -81,7 +82,6 @@ class ReplayService(
 
         logger.debug("Attempting to save new $slug")
         val replay = Replay(
-            fileUploadId = upload?.id,
             mapName = mapName,
             duration = duration,
             playedAt = playedAt,

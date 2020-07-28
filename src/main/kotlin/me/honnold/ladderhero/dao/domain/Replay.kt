@@ -11,7 +11,7 @@ data class Replay(
     var id: UUID? = null,
 
     @Column("file_upload_id")
-    var fileUploadId: UUID?,
+    var fileUploadId: UUID? = null,
 
     @Column("map_nm")
     var mapName: String,
