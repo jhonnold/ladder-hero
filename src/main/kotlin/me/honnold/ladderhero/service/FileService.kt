@@ -3,39 +3,25 @@ package me.honnold.ladderhero.service
 import me.honnold.ladderhero.domain.FileUpload
 import me.honnold.ladderhero.repository.FileUploadRepository
 import org.slf4j.LoggerFactory
-import org.springframework.http.codec.multipart.FilePart
 import org.springframework.stereotype.Service
-import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import java.util.*
 
 @Service
-class FileService(
-    private val s3ClientService: S3ClientService,
-    private val fileUploadRepository: FileUploadRepository,
-    private val replayService: ReplayService
-) {
+class FileService(private val fileUploadRepository: FileUploadRepository) {
     companion object {
         private val logger = LoggerFactory.getLogger(FileService::class.java)
     }
 
-    fun handleUpload(files: Flux<FilePart>): Flux<FileUpload> {
-        return files
-            .flatMap({ s3ClientService.upload(it) }, 8)
-            .flatMap {
-                this.save(it).onErrorResume { Mono.empty() }
-            }
+    fun save(uploadResult: S3ClientService.UploadResult): Mono<FileUpload> {
+        val fileUpload = FileUpload(key = uploadResult.fileKey, fileName = uploadResult.fileName)
+
+        return this.save(fileUpload)
     }
 
-    fun save(clientRecord: Pair<String, String>): Mono<FileUpload> {
-        val key = UUID.fromString(clientRecord.first)
-        val fileName = clientRecord.second
-
-        val fileUpload = FileUpload(key = key, fileName = fileName)
-
+    private fun save(fileUpload: FileUpload): Mono<FileUpload> {
         return this.fileUploadRepository.save(fileUpload)
-            .doFirst { logger.debug("Saving new upload record ($key, $fileName)") }
-            .doOnSuccess { logger.debug("Successfully saved new $it") }
-            .doOnError { logger.error("Unable to save upload record ($key, $fileName) -- ${it.message}") }
+            .doFirst { logger.debug("Saving new upload record $fileUpload") }
+            .doOnSuccess { result -> logger.debug("Successfully saved new $result") }
+            .doOnError { error -> logger.error("Unable to save upload record $fileUpload -- ${error.message}") }
     }
 }

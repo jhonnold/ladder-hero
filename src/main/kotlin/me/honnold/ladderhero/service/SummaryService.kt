@@ -4,7 +4,6 @@ import me.honnold.ladderhero.domain.Replay
 import me.honnold.ladderhero.domain.Summary
 import me.honnold.ladderhero.domain.SummarySnapshot
 import me.honnold.ladderhero.repository.SummaryRepository
-import me.honnold.ladderhero.repository.SummarySnapshotRepository
 import me.honnold.sc2protocol.model.data.Struct
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -16,26 +15,26 @@ import kotlin.math.max
 @Service
 class SummaryService(
     private val summaryRepository: SummaryRepository,
-    private val summarySnapshotRepository: SummarySnapshotRepository
+    private val summarySnapshotService: SummarySnapshotService
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(SummaryService::class.java)
     }
 
     fun initializeSummary(replay: Replay, playerData: PlayerService.PlayerData): Mono<Summary> {
-        return this.summaryRepository.save(
-            Summary(
-                replayId = replay.id,
-                playerId = playerData.player.id,
-                workingId = playerData.id,
-                race = playerData.race,
-                name = playerData.name
-            )
+        val summary = Summary(
+            replayId = replay.id,
+            playerId = playerData.player.id,
+            workingId = playerData.id,
+            race = playerData.race,
+            name = playerData.name
         )
+
+        return this.save(summary)
             .doOnSuccess { logger.info("Successfully initialized summary for ${playerData.player.id} on ${replay.id} as $it") }
     }
 
-    fun populateSummary(summary: Summary, data: ReplayService.ReplayData): Mono<Summary> {
+    fun populateSummary(summary: Summary, data: ProcessingService.ReplayProcessingData): Mono<Summary> {
         logger.debug("Starting to populate stats for $summary")
 
         val firstLeaveGameEvent = data.gameEvents.find { it.name == "NNet.Game.SGameUserLeaveEvent" }
@@ -92,19 +91,17 @@ class SummaryService(
                 )
             }
             .collectList()
-            .flatMapMany { this.summarySnapshotRepository.saveAll(it) }
-            .doOnNext { logger.trace("Saved $it") }
-            .doOnComplete { logger.info("Successfully saved ${summaryStateEvents.size} summary snapshots for ${summary.id}") }
+            .flatMap { this.summarySnapshotService.saveAll(it) }
 
-        return snapshots.reduce(
-            Tuples.of(0L, 0L, 0L, 0L, 0),
-            { acc, snapshot ->
+        return snapshots.map {
+            it.fold(Tuples.of(0L, 0L, 0L, 0L, 0L)) { acc, snapshot ->
                 acc.mapT1 { it + snapshot.unspentMinerals }
                     .mapT2 { it + snapshot.unspentVespene }
                     .mapT3 { it + snapshot.collectionRateMinerals }
                     .mapT4 { it + snapshot.collectionRateVespene }
                     .mapT5 { it + 1 }
-            })
+            }
+        }
             .flatMap { acc ->
                 val finalSummaryStateEvent = summaryStateEvents.findLast { e -> e.loop <= maxGameLoop }
                     ?: return@flatMap Mono.empty<Summary>()
@@ -145,9 +142,16 @@ class SummaryService(
                 summary.avgCollectionRateMinerals = acc.t3 / max(1, acc.t5)
                 summary.avgCollectionRateVespene = acc.t4 / max(1, acc.t5)
 
-                this.summaryRepository.save(summary)
+                this.save(summary)
                     .doOnSuccess { logger.info("Populated $summary") }
             }
+    }
+
+    fun save(summary: Summary): Mono<Summary> {
+        return this.summaryRepository.save(summary)
+            .doFirst { logger.debug("Starting to save $summary") }
+            .doOnSuccess { logger.debug("Successfully saved $summary") }
+            .doOnError { logger.error("Unable to save $summary -- ${it.message}") }
     }
 }
 

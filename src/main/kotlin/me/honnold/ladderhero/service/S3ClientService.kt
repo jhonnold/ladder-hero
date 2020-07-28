@@ -54,7 +54,7 @@ class S3ClientService(s3Region: Region, s3CredentialsProvider: AwsCredentialsPro
             .build()
     }
 
-    fun upload(filePart: FilePart): Mono<Pair<String, String>> {
+    fun upload(filePart: FilePart): Mono<UploadResult> {
         val fileKey = UUID.randomUUID().toString()
 
         val uploadRequest = s3Client
@@ -104,9 +104,9 @@ class S3ClientService(s3Region: Region, s3CredentialsProvider: AwsCredentialsPro
                 if (it.sdkHttpResponse() == null || !it.sdkHttpResponse().isSuccessful)
                     throw RuntimeException("Upload failed!")
 
-                logger.info("Successfully uploaded ${filePart.filename()} to ${this.s3Bucket}")
-                Pair(fileKey, filePart.filename())
+                UploadResult(UUID.fromString(fileKey), filePart.filename())
             }
+            .doOnSuccess { logger.info("Successfully uploaded $it to ${this.s3Bucket}") }
     }
 
     fun download(uuid: UUID): Mono<Path> {
@@ -206,6 +206,8 @@ class S3ClientService(s3Region: Region, s3CredentialsProvider: AwsCredentialsPro
         var buffered = 0
         var completedParts = HashMap<Int, CompletedPart>()
     }
+
+    data class UploadResult(val fileKey: UUID, val fileName: String)
 
     class FluxResponseProvider : AsyncResponseTransformer<GetObjectResponse, FluxResponse> {
         private lateinit var response: FluxResponse

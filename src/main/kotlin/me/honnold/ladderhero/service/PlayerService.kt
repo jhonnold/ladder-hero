@@ -16,7 +16,7 @@ class PlayerService(private val playerRepository: PlayerRepository) {
         private val logger = LoggerFactory.getLogger(PlayerService::class.java)
     }
 
-    fun buildPlayers(data: ReplayService.ReplayData): Flux<PlayerData> {
+    fun buildPlayers(data: ProcessingService.ReplayProcessingData): Flux<PlayerData> {
         val players: List<Struct> = data.details["m_playerList"]
         logger.debug("Replay included ${players.size} player(s)")
 
