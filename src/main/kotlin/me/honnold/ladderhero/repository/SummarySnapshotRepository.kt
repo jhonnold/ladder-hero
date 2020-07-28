@@ -1,6 +1,6 @@
 package me.honnold.ladderhero.repository
 
-import me.honnold.ladderhero.domain.SummarySnapshot
+import me.honnold.ladderhero.dao.domain.SummarySnapshot
 import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.repository.reactive.ReactiveCrudRepository
 import reactor.core.publisher.Flux

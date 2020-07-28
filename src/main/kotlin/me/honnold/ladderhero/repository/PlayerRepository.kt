@@ -1,6 +1,6 @@
 package me.honnold.ladderhero.repository
 
-import me.honnold.ladderhero.domain.Player
+import me.honnold.ladderhero.dao.domain.Player
 import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.repository.reactive.ReactiveCrudRepository
 import reactor.core.publisher.Mono

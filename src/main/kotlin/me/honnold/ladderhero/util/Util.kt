@@ -1,5 +1,6 @@
 package me.honnold.ladderhero.util
 
+import me.honnold.sc2protocol.model.data.Struct
 import me.honnold.sc2protocol.model.event.Event
 import org.apache.commons.text.StringEscapeUtils
 import java.time.LocalDateTime
@@ -19,3 +20,5 @@ fun gameDuration(events: List<Event>): Long {
 }
 
 fun unescapeName(name: String): String = StringEscapeUtils.unescapeHtml4(name).replace("<sp/>", " ")
+
+fun Struct.getLong(key: String): Long = this[key]

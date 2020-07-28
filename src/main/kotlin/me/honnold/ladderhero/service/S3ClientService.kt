@@ -1,18 +1,19 @@
 package me.honnold.ladderhero.service
 
+import me.honnold.ladderhero.service.dto.download.FluxResponseProvider
+import me.honnold.ladderhero.service.dto.upload.UploadResult
+import me.honnold.ladderhero.service.dto.upload.UploadState
+import me.honnold.ladderhero.util.BuffersUtil
 import org.slf4j.LoggerFactory
-import org.springframework.core.io.buffer.DataBuffer
 import org.springframework.core.io.buffer.DataBufferUtils
-import org.springframework.core.io.buffer.DefaultDataBufferFactory
 import org.springframework.http.MediaType
 import org.springframework.http.codec.multipart.FilePart
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toMono
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.core.async.AsyncRequestBody
-import software.amazon.awssdk.core.async.AsyncResponseTransformer
-import software.amazon.awssdk.core.async.SdkPublisher
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3AsyncClient
@@ -24,7 +25,6 @@ import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 import java.time.Duration
 import java.util.*
-import java.util.concurrent.CompletableFuture
 
 @Service
 class S3ClientService(s3Region: Region, s3CredentialsProvider: AwsCredentialsProvider, private val s3Bucket: String) {
@@ -55,22 +55,18 @@ class S3ClientService(s3Region: Region, s3CredentialsProvider: AwsCredentialsPro
     }
 
     fun upload(filePart: FilePart): Mono<UploadResult> {
-        val fileKey = UUID.randomUUID().toString()
-
-        val uploadRequest = s3Client
-            .createMultipartUpload(
-                CreateMultipartUploadRequest.builder()
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM_VALUE)
-                    .key(fileKey)
-                    .bucket(this.s3Bucket)
-                    .build()
-            )
-
+        val fileKey = UUID.randomUUID()
         val state = UploadState(this.s3Bucket, fileKey)
-
-        logger.debug("Uploading ${filePart.filename()} to ${this.s3Bucket} with key $fileKey")
+        val uploadRequest = s3Client.createMultipartUpload(
+            CreateMultipartUploadRequest.builder()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM_VALUE)
+                .key(fileKey.toString())
+                .bucket(this.s3Bucket)
+                .build()
+        )
 
         return Mono.fromFuture(uploadRequest)
+            .doOnSubscribe { logger.debug("Uploading ${filePart.filename()} to ${this.s3Bucket} with key $fileKey") }
             .flatMapMany {
                 if (it.sdkHttpResponse() == null || !it.sdkHttpResponse().isSuccessful)
                     throw RuntimeException("Upload failed!")
@@ -91,7 +87,7 @@ class S3ClientService(s3Region: Region, s3CredentialsProvider: AwsCredentialsPro
                     false
                 }
             }
-            .map { concatBuffers(it) }
+            .map { BuffersUtil.concatBuffers(it) }
             .flatMap { uploadPart(state, it) }
             .onBackpressureBuffer()
             .reduce(state, { acc, part ->
@@ -104,7 +100,7 @@ class S3ClientService(s3Region: Region, s3CredentialsProvider: AwsCredentialsPro
                 if (it.sdkHttpResponse() == null || !it.sdkHttpResponse().isSuccessful)
                     throw RuntimeException("Upload failed!")
 
-                UploadResult(UUID.fromString(fileKey), filePart.filename())
+                UploadResult(fileKey, filePart.filename())
             }
             .doOnSuccess { logger.info("Successfully uploaded $it to ${this.s3Bucket}") }
     }
@@ -118,12 +114,7 @@ class S3ClientService(s3Region: Region, s3CredentialsProvider: AwsCredentialsPro
             .key(uuid.toString())
             .build()
 
-        val requestMono = Mono.fromFuture(
-            this.s3Client.getObject(
-                request,
-                FluxResponseProvider()
-            )
-        )
+        val requestMono = this.s3Client.getObject(request, FluxResponseProvider()).toMono()
 
         val data = Flux.from(requestMono)
             .flatMap {
@@ -140,28 +131,12 @@ class S3ClientService(s3Region: Region, s3CredentialsProvider: AwsCredentialsPro
             .then(Mono.just(path))
     }
 
-    private fun concatBuffers(buffers: List<DataBuffer>): ByteBuffer {
-        logger.debug("Creating single buffer from ${buffers.size} chunks")
-
-        var size = 0
-        buffers.forEach { size += it.readableByteCount() }
-
-        val data = ByteBuffer.allocate(size)
-        buffers.forEach { data.put(it.asByteBuffer()) }
-
-        data.rewind()
-        logger.debug("Generated final buffer of size ${data.capacity()}")
-        return data
-    }
-
     private fun uploadPart(state: UploadState, buffer: ByteBuffer): Mono<CompletedPart> {
         val partNumber = ++state.partCounter
-        logger.debug("Uploading part $partNumber of size ${buffer.capacity()}")
-
         val request = this.s3Client.uploadPart(
             UploadPartRequest.builder()
                 .bucket(state.bucket)
-                .key(state.fileKey)
+                .key(state.fileKey.toString())
                 .partNumber(partNumber)
                 .uploadId(state.uploadId)
                 .contentLength(buffer.capacity().toLong())
@@ -169,6 +144,7 @@ class S3ClientService(s3Region: Region, s3CredentialsProvider: AwsCredentialsPro
         )
 
         return Mono.fromFuture(request)
+            .doOnSubscribe { logger.debug("Uploading part $partNumber of size ${buffer.capacity()}") }
             .map {
                 if (it.sdkHttpResponse() == null || !it.sdkHttpResponse().isSuccessful)
                     throw RuntimeException("Upload failed!")
@@ -189,54 +165,14 @@ class S3ClientService(s3Region: Region, s3CredentialsProvider: AwsCredentialsPro
             .build()
 
         return Mono.fromFuture(
-            s3Client.completeMultipartUpload(
+            this.s3Client.completeMultipartUpload(
                 CompleteMultipartUploadRequest.builder()
                     .bucket(state.bucket)
                     .uploadId(state.uploadId)
                     .multipartUpload(completedUpload)
-                    .key(state.fileKey)
+                    .key(state.fileKey.toString())
                     .build()
             )
         )
-    }
-
-    data class UploadState(val bucket: String, val fileKey: String) {
-        var uploadId = ""
-        var partCounter = 0
-        var buffered = 0
-        var completedParts = HashMap<Int, CompletedPart>()
-    }
-
-    data class UploadResult(val fileKey: UUID, val fileName: String)
-
-    class FluxResponseProvider : AsyncResponseTransformer<GetObjectResponse, FluxResponse> {
-        private lateinit var response: FluxResponse
-
-        override fun prepare(): CompletableFuture<FluxResponse> {
-            this.response = FluxResponse()
-            return this.response.cf
-        }
-
-        override fun onResponse(response: GetObjectResponse?) {
-            this.response.sdkResponse = response
-        }
-
-        override fun onStream(publisher: SdkPublisher<ByteBuffer>?) {
-            val factory = DefaultDataBufferFactory()
-
-            this.response.buffer = Flux.from(publisher!!)
-                .map { factory.wrap(it) }
-            this.response.cf.complete(this.response)
-        }
-
-        override fun exceptionOccurred(error: Throwable?) {
-            this.response.cf.completeExceptionally(error)
-        }
-    }
-
-    class FluxResponse {
-        val cf = CompletableFuture<FluxResponse>()
-        var sdkResponse: GetObjectResponse? = null
-        lateinit var buffer: Flux<DataBuffer>
     }
 }

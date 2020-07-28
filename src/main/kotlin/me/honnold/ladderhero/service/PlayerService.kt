@@ -1,6 +1,6 @@
 package me.honnold.ladderhero.service
 
-import me.honnold.ladderhero.domain.Player
+import me.honnold.ladderhero.dao.domain.Player
 import me.honnold.ladderhero.repository.PlayerRepository
 import me.honnold.ladderhero.util.unescapeName
 import me.honnold.sc2protocol.model.data.Blob

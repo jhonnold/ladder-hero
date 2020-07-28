@@ -1,6 +1,6 @@
 package me.honnold.ladderhero.service
 
-import me.honnold.ladderhero.domain.SummarySnapshot
+import me.honnold.ladderhero.dao.domain.SummarySnapshot
 import me.honnold.ladderhero.repository.SummarySnapshotRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service

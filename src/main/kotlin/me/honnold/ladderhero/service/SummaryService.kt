@@ -1,11 +1,12 @@
 package me.honnold.ladderhero.service
 
-import me.honnold.ladderhero.domain.Replay
-import me.honnold.ladderhero.domain.Summary
-import me.honnold.ladderhero.domain.SummarySnapshot
+import me.honnold.ladderhero.dao.domain.Replay
+import me.honnold.ladderhero.dao.domain.Summary
+import me.honnold.ladderhero.dao.domain.SummarySnapshot
 import me.honnold.ladderhero.repository.PlayerRepository
 import me.honnold.ladderhero.repository.SummaryRepository
 import me.honnold.ladderhero.repository.SummarySnapshotRepository
+import me.honnold.ladderhero.util.getLong
 import me.honnold.sc2protocol.model.data.Struct
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -171,5 +172,3 @@ class SummaryService(
             .doOnError { logger.error("Unable to save $summary -- ${it.message}") }
     }
 }
-
-fun Struct.getLong(key: String): Long = this[key]

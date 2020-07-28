@@ -1,9 +1,8 @@
-package me.honnold.ladderhero.domain
+package me.honnold.ladderhero.dao.domain
 
 import org.springframework.data.annotation.Id
 import org.springframework.data.annotation.Transient
 import java.util.*
-import kotlin.collections.HashSet
 
 data class Player(
     @Id

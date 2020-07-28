@@ -1,8 +1,9 @@
 package me.honnold.ladderhero.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import me.honnold.ladderhero.domain.FileUpload
-import me.honnold.ladderhero.repository.FileUploadRepository
+import me.honnold.ladderhero.dao.FileUploadDAO
+import me.honnold.ladderhero.dao.domain.FileUpload
+import me.honnold.ladderhero.service.domain.ReplayService
 import me.honnold.mpq.Archive
 import me.honnold.sc2protocol.Protocol
 import org.slf4j.LoggerFactory
@@ -13,7 +14,7 @@ import java.nio.file.Path
 
 @Service
 class ProcessingService(
-    private val fileUploadRepository: FileUploadRepository,
+    private val fileUploadDAO: FileUploadDAO,
     private val s3ClientService: S3ClientService,
     private val summaryService: SummaryService,
     private val replayService: ReplayService,
@@ -29,7 +30,7 @@ class ProcessingService(
 
         return Mono.just(1)
             .flatMap {
-                fileUpload.status = "PROCESSING"; this.fileUploadRepository.save(fileUpload)
+                fileUpload.status = "PROCESSING"; this.fileUploadDAO.save(fileUpload)
             }
             .flatMap { uploadRecord ->
                 this.s3ClientService.download(uploadRecord.key)
@@ -50,7 +51,7 @@ class ProcessingService(
             }
             .collectList()
             .flatMap {
-                fileUpload.status = "COMPLETED"; this.fileUploadRepository.save(fileUpload)
+                fileUpload.status = "COMPLETED"; this.fileUploadDAO.save(fileUpload)
             }
             .doOnSuccess {
                 logger.info("Finished processing $fileUpload")
@@ -59,7 +60,7 @@ class ProcessingService(
                 logger.error("Unable to process $fileUpload -- ${it.message}")
             }
             .onErrorResume {
-                fileUpload.status = "FAILED"; this.fileUploadRepository.save(fileUpload)
+                fileUpload.status = "FAILED"; this.fileUploadDAO.save(fileUpload)
             }
             .doFinally {
                 processingData?.archive?.close()

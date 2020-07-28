@@ -5,5 +5,5 @@ CREATE TABLE public.replay (
 	dur_s int NULL,
 	played_at timestamp NULL,
 	CONSTRAINT replay_pk PRIMARY KEY (id),
-	CONSTRAINT replay_fk FOREIGN KEY (file_upload_id) REFERENCES public.file_upload(id) ON DELETE SET NULL
+	CONSTRAINT replay_fk FOREIGN KEY (file_upload_id) REFERENCES public.file_uploads(id) ON DELETE SET NULL
 );

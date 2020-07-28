@@ -31,6 +31,7 @@ dependencies {
     implementation group: "software.amazon.awssdk", name: "s3"
     implementation group: "software.amazon.awssdk", name: "netty-nio-client"
 
+    implementation group: "io.projectreactor.kotlin", name: "reactor-kotlin-extensions"
     implementation group: "org.apache.commons", name: "commons-text", version: "1.8"
     implementation group: "com.github.slugify", name: "slugify", version: "2.4"
 

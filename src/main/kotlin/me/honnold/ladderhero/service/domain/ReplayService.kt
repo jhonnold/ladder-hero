@@ -1,12 +1,12 @@
-package me.honnold.ladderhero.service
+package me.honnold.ladderhero.service.domain
 
 import com.github.slugify.Slugify
-import me.honnold.ladderhero.domain.FileUpload
-import me.honnold.ladderhero.domain.Replay
-import me.honnold.ladderhero.repository.PlayerRepository
+import me.honnold.ladderhero.dao.domain.FileUpload
+import me.honnold.ladderhero.dao.domain.Replay
 import me.honnold.ladderhero.repository.ReplayRepository
 import me.honnold.ladderhero.repository.SummaryRepository
-import me.honnold.ladderhero.repository.SummarySnapshotRepository
+import me.honnold.ladderhero.service.ProcessingService
+import me.honnold.ladderhero.service.SummaryService
 import me.honnold.ladderhero.util.gameDuration
 import me.honnold.ladderhero.util.windowsTimeToDate
 import me.honnold.sc2protocol.model.data.Blob

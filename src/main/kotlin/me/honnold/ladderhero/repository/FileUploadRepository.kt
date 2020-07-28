@@ -1,7 +1,0 @@
-package me.honnold.ladderhero.repository
-
-import me.honnold.ladderhero.domain.FileUpload
-import org.springframework.data.repository.reactive.ReactiveCrudRepository
-import java.util.*
-
-interface FileUploadRepository : ReactiveCrudRepository<FileUpload, UUID>
