@@ -6,6 +6,7 @@ import me.honnold.ladderhero.domain.Replay
 import me.honnold.ladderhero.repository.PlayerRepository
 import me.honnold.ladderhero.repository.ReplayRepository
 import me.honnold.ladderhero.repository.SummaryRepository
+import me.honnold.ladderhero.repository.SummarySnapshotRepository
 import me.honnold.ladderhero.util.gameDuration
 import me.honnold.ladderhero.util.windowsTimeToDate
 import me.honnold.sc2protocol.model.data.Blob
@@ -16,12 +17,14 @@ import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.time.ZoneOffset
+import java.util.*
 
 @Service
 class ReplayService(
     private val replayRepository: ReplayRepository,
     private val summaryRepository: SummaryRepository,
-    private val playerRepository: PlayerRepository
+    private val playerRepository: PlayerRepository,
+    private val summarySnapshotRepository: SummarySnapshotRepository
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(ReplayService::class.java)
@@ -34,16 +37,46 @@ class ReplayService(
                 this.summaryRepository.getSummariesForReplayId(replay.id!!)
                     .flatMap { summary ->
                         this.playerRepository.findById(summary.playerId!!)
-                            .map { player ->
-                                summary.player = player
-                                summary
-                            }
+                            .map { summary.player = it; summary }
                     }
                     .collectList()
-                    .map { summaries ->
-                        replay.summaries = summaries.toSet()
-                        replay
+                    .map { replay.summaries = it; replay }
+            }
+    }
+
+    fun getReplay(id: UUID): Mono<Replay> {
+        return this.replayRepository.findById(id)
+            .flatMap { replay ->
+                this.summaryRepository.getSummariesForReplayId(replay.id!!)
+                    .flatMap { summary ->
+                        this.playerRepository.findById(summary.playerId!!)
+                            .map { summary.player = it; summary }
                     }
+                    .flatMap { summary ->
+                        this.summarySnapshotRepository.findAllBySummaryId(summary.id!!)
+                            .collectList()
+                            .map { summary.snapshots = it; summary }
+                    }
+                    .collectList()
+                    .map { replay.summaries = it; replay }
+            }
+    }
+
+    fun getReplay(slug: String): Mono<Replay> {
+        return this.replayRepository.findBySlug(slug)
+            .flatMap { replay ->
+                this.summaryRepository.getSummariesForReplayId(replay.id!!)
+                    .flatMap { summary ->
+                        this.playerRepository.findById(summary.playerId!!)
+                            .map { summary.player = it; summary }
+                    }
+                    .flatMap { summary ->
+                        this.summarySnapshotRepository.findAllBySummaryId(summary.id!!)
+                            .collectList()
+                            .map { summary.snapshots = it; summary }
+                    }
+                    .collectList()
+                    .map { replay.summaries = it; replay }
             }
     }
 

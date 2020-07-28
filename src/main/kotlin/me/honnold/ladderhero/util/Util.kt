@@ -7,7 +7,7 @@ import java.time.ZoneOffset
 import kotlin.math.floor
 
 fun windowsTimeToDate(time: Long): LocalDateTime {
-    val epoch = time / 10_000 - 11_644_473_600_000
+    val epoch = time / 10_000_000 - 11_644_473_600
 
     return LocalDateTime.ofEpochSecond(epoch, 0, ZoneOffset.UTC)
 }

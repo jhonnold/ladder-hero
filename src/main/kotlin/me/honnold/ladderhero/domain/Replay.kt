@@ -29,5 +29,5 @@ data class Replay(
     var fileUpload: FileUpload? = null
 
     @Transient
-    var summaries: Set<Summary> = HashSet()
+    var summaries: List<Summary> = emptyList()
 }

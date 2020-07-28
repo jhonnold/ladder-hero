@@ -13,5 +13,5 @@ data class Player(
     var realmId: Long
 ) {
     @Transient
-    var summaries: Set<Summary> = HashSet()
+    var summaries: List<Summary> = emptyList()
 }

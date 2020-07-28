@@ -17,7 +17,7 @@ dependencies {
     implementation group: "org.jetbrains.kotlin", name: "kotlin-reflect"
 
     implementation group: "me.honnold", name: "mpq", version: "1.0.1"
-    implementation group: "me.honnold", name: "sc2protocol", version: "1.0.1"
+    implementation group: "me.honnold", name: "sc2protocol", version: "1.0.2"
 
     implementation group: "org.springframework.boot", name: "spring-boot-starter-webflux"
     implementation group: "org.springframework.boot", name: "spring-boot-starter-data-r2dbc"

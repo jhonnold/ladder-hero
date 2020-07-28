@@ -31,5 +31,5 @@ data class Summary(
     var player: Player? = null
 
     @Transient
-    var snapshots: Set<SummarySnapshot> = HashSet()
+    var snapshots: List<SummarySnapshot> = emptyList()
 }
