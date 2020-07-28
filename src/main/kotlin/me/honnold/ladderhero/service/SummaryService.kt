@@ -3,7 +3,9 @@ package me.honnold.ladderhero.service
 import me.honnold.ladderhero.domain.Replay
 import me.honnold.ladderhero.domain.Summary
 import me.honnold.ladderhero.domain.SummarySnapshot
+import me.honnold.ladderhero.repository.PlayerRepository
 import me.honnold.ladderhero.repository.SummaryRepository
+import me.honnold.ladderhero.repository.SummarySnapshotRepository
 import me.honnold.sc2protocol.model.data.Struct
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -15,10 +17,25 @@ import kotlin.math.max
 @Service
 class SummaryService(
     private val summaryRepository: SummaryRepository,
-    private val summarySnapshotService: SummarySnapshotService
+    private val summarySnapshotService: SummarySnapshotService,
+    private val summarySnapshotRepository: SummarySnapshotRepository,
+    private val playerRepository: PlayerRepository
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(SummaryService::class.java)
+    }
+
+    fun attachSummarySnapshots(summary: Summary): Mono<Summary> {
+        return this.summarySnapshotRepository.findAllBySummaryId(summary.id!!)
+            .collectList()
+            .map { summary.snapshots = it; summary }
+    }
+
+    fun attachPlayer(summary: Summary): Mono<Summary> {
+        val id = summary.playerId ?: return Mono.empty()
+
+        return this.playerRepository.findById(id)
+            .map { summary.player = it; summary }
     }
 
     fun initializeSummary(replay: Replay, playerData: PlayerService.PlayerData): Mono<Summary> {

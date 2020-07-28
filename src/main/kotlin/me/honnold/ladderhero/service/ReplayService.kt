@@ -23,22 +23,19 @@ import java.util.*
 class ReplayService(
     private val replayRepository: ReplayRepository,
     private val summaryRepository: SummaryRepository,
-    private val playerRepository: PlayerRepository,
-    private val summarySnapshotRepository: SummarySnapshotRepository
+    private val summaryService: SummaryService
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(ReplayService::class.java)
         private val slugger = Slugify()
     }
 
+    // TODO: Solve the N+1 problems that lie below this...
     fun getReplays(page: Pageable): Flux<Replay> {
         return this.replayRepository.findPage(page.pageSize, page.offset)
             .flatMap { replay ->
                 this.summaryRepository.getSummariesForReplayId(replay.id!!)
-                    .flatMap { summary ->
-                        this.playerRepository.findById(summary.playerId!!)
-                            .map { summary.player = it; summary }
-                    }
+                    .flatMap { this.summaryService.attachPlayer(it) }
                     .collectList()
                     .map { replay.summaries = it; replay }
             }
@@ -48,15 +45,8 @@ class ReplayService(
         return this.replayRepository.findById(id)
             .flatMap { replay ->
                 this.summaryRepository.getSummariesForReplayId(replay.id!!)
-                    .flatMap { summary ->
-                        this.playerRepository.findById(summary.playerId!!)
-                            .map { summary.player = it; summary }
-                    }
-                    .flatMap { summary ->
-                        this.summarySnapshotRepository.findAllBySummaryId(summary.id!!)
-                            .collectList()
-                            .map { summary.snapshots = it; summary }
-                    }
+                    .flatMap { this.summaryService.attachPlayer(it) }
+                    .flatMap { this.summaryService.attachSummarySnapshots(it) }
                     .collectList()
                     .map { replay.summaries = it; replay }
             }
@@ -66,15 +56,8 @@ class ReplayService(
         return this.replayRepository.findBySlug(slug)
             .flatMap { replay ->
                 this.summaryRepository.getSummariesForReplayId(replay.id!!)
-                    .flatMap { summary ->
-                        this.playerRepository.findById(summary.playerId!!)
-                            .map { summary.player = it; summary }
-                    }
-                    .flatMap { summary ->
-                        this.summarySnapshotRepository.findAllBySummaryId(summary.id!!)
-                            .collectList()
-                            .map { summary.snapshots = it; summary }
-                    }
+                    .flatMap { this.summaryService.attachPlayer(it) }
+                    .flatMap { this.summaryService.attachSummarySnapshots(it) }
                     .collectList()
                     .map { replay.summaries = it; replay }
             }
