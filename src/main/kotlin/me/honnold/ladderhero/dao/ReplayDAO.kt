@@ -1,6 +1,7 @@
 package me.honnold.ladderhero.dao
 
 import me.honnold.ladderhero.dao.domain.Replay
+import me.honnold.ladderhero.dao.value.ReplayDetailRow
 import me.honnold.ladderhero.dao.value.ReplaySummaryRow
 import org.slf4j.LoggerFactory
 import org.springframework.dao.DataRetrievalFailureException
@@ -26,12 +27,20 @@ class ReplayDAO(private val databaseClient: DatabaseClient) : DAO<Replay, UUID> 
             .first()
     }
 
-    fun findBySlug(slug: String): Mono<Replay> {
-        return databaseClient.select()
-            .from(Replay::class.java)
-            .matching(Criteria.where("slug").`is`(slug))
+    fun findDetailsById(id: UUID): Flux<ReplayDetailRow> {
+        return databaseClient.execute(ReplayDetailRow.ID_QUERY)
+            .bind("id", id)
+            .`as`(ReplayDetailRow::class.java)
             .fetch()
-            .first()
+            .all()
+    }
+
+    fun findDetailsBySlug(slug: String): Flux<ReplayDetailRow> {
+        return databaseClient.execute(ReplayDetailRow.SLUG_QUERY)
+            .bind("slug", slug)
+            .`as`(ReplayDetailRow::class.java)
+            .fetch()
+            .all()
     }
 
     fun findAll(pageRequest: PageRequest): Flux<ReplaySummaryRow> {

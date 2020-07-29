@@ -1,7 +1,7 @@
 package me.honnold.ladderhero.web.api.v1
 
-import me.honnold.ladderhero.dao.domain.Replay
 import me.honnold.ladderhero.service.domain.ReplayService
+import me.honnold.ladderhero.service.dto.replay.ReplayDetails
 import me.honnold.ladderhero.service.dto.replay.ReplaySummary
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.PageRequest
@@ -28,7 +28,7 @@ class ReplayController(private val replayService: ReplayService) {
     }
 
     @GetMapping("/{lookup}")
-    fun getReplay(@PathVariable lookup: String): Mono<Replay> {
+    fun getReplay(@PathVariable lookup: String): Mono<ReplayDetails> {
         return this.replayService.getReplay(lookup)
     }
 }

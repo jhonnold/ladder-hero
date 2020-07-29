@@ -4,6 +4,7 @@ import com.github.slugify.Slugify
 import me.honnold.ladderhero.dao.ReplayDAO
 import me.honnold.ladderhero.dao.domain.Replay
 import me.honnold.ladderhero.service.dto.replay.ReplayData
+import me.honnold.ladderhero.service.dto.replay.ReplayDetails
 import me.honnold.ladderhero.service.dto.replay.ReplaySummary
 import me.honnold.ladderhero.util.gameDuration
 import me.honnold.ladderhero.util.isUUID
@@ -26,36 +27,106 @@ class ReplayService(private val replayDAO: ReplayDAO) {
     }
 
     fun getReplays(pageRequest: PageRequest, profileId: Long?): Flux<ReplaySummary> {
-        val replays = if (profileId == null)
+        val replaySummaryRows = if (profileId == null)
             this.replayDAO.findAll(pageRequest)
         else
             this.replayDAO.findAllByProfileId(profileId, pageRequest)
 
-        return replays
+        return replaySummaryRows
             .groupBy { row -> row.replayId }
             .flatMap { replayFlux ->
-                replayFlux.reduce(ReplaySummary(), { acc, r ->
-                    acc.replayId = r.replayId
-                    acc.mapName = r.mapName
-                    acc.duration = r.duration
-                    acc.playedAt = r.playedAt
-                    acc.slug = r.replaySlug
+                replayFlux
+                    .collectList()
+                    .map { replayRows ->
+                        val replaySummary =
+                            ReplaySummary(
+                                replayRows[0].replayId,
+                                replayRows[0].mapName,
+                                replayRows[0].duration,
+                                replayRows[0].playedAt,
+                                replayRows[0].replaySlug
+                            )
 
-                    acc.players.add(ReplaySummary.ReplayPlayer(r.playerId, r.race, r.name, r.profileId))
+                        replaySummary.players.addAll(
+                            replayRows.map { player ->
+                                ReplaySummary.ReplayPlayer(
+                                    player.playerId,
+                                    player.race,
+                                    player.name,
+                                    player.profileId
+                                )
+                            }
+                        )
 
-                    acc
-                })
+                        replaySummary
+                    }
             }
             .sort { o1, o2 -> o2.playedAt.compareTo(o1.playedAt) }
-
     }
 
-    fun getReplay(lookup: String): Mono<Replay> {
-        return if (lookup.isUUID())
-            this.replayDAO.findById(lookup.toUUID())
-                .onErrorResume { this.replayDAO.findBySlug(lookup) }
+    fun getReplay(lookup: String): Mono<ReplayDetails> {
+        val replayDetailsRows = if (lookup.isUUID())
+            this.replayDAO.findDetailsById(lookup.toUUID())
         else
-            this.replayDAO.findBySlug(lookup)
+            this.replayDAO.findDetailsBySlug(lookup)
+
+        return replayDetailsRows
+            .collectList()
+            .flatMap { details ->
+                if (details.size == 0)
+                    return@flatMap Mono.empty<ReplayDetails>()
+
+                val replayDetails =
+                    ReplayDetails(
+                        details[0].replayId,
+                        details[0].mapName,
+                        details[0].duration,
+                        details[0].playedAt,
+                        details[0].replaySlug
+                    )
+
+                replayDetails.players.addAll(
+                    details
+                        .groupBy { row -> row.playerId }
+                        .values
+                        .map { playerSnapshots ->
+                            val playerDetails =
+                                ReplayDetails.ReplayPlayer(
+                                    playerSnapshots[0].playerId,
+                                    playerSnapshots[0].race,
+                                    playerSnapshots[0].name,
+                                    playerSnapshots[0].profileId,
+                                    playerSnapshots[0].collectedMinerals,
+                                    playerSnapshots[0].collectedVespene,
+                                    playerSnapshots[0].avgUnspentMinerals,
+                                    playerSnapshots[0].avgUnspentVespene,
+                                    playerSnapshots[0].avgCollectionRateMinerals,
+                                    playerSnapshots[0].avgCollectionRateVespene
+                                )
+
+                            playerDetails.snapshots.addAll(
+                                playerSnapshots.map { snapshot ->
+                                    ReplayDetails.ReplayPlayer.PlayerSnapshot(
+                                        snapshot.loop,
+                                        snapshot.lostMinerals,
+                                        snapshot.lostVespene,
+                                        snapshot.unspentMinerals,
+                                        snapshot.unspentVespene,
+                                        snapshot.collectionRateMinerals,
+                                        snapshot.collectionRateVespene,
+                                        snapshot.activeWorkers,
+                                        snapshot.armyValueMinerals,
+                                        snapshot.armyValueVespene
+                                    )
+                                }
+                            )
+
+                            playerDetails
+                        }
+                )
+
+                Mono.just(replayDetails)
+            }
     }
 
     fun buildAndSaveReplay(replayData: ReplayData): Mono<Replay> {
