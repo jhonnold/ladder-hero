@@ -4,11 +4,11 @@ import java.time.LocalDateTime
 import java.util.*
 
 data class ReplaySummary(
-    var replayId: UUID? = null,
-    var mapName: String? = null,
-    var duration: Long? = null,
-    var playedAt: LocalDateTime? = null,
-    var slug: String? = null
+    var replayId: UUID = UUID.randomUUID(),
+    var mapName: String = "",
+    var duration: Long = 0,
+    var playedAt: LocalDateTime = LocalDateTime.MIN,
+    var slug: String = ""
 ) {
     val players: MutableList<ReplayPlayer> = ArrayList()
 

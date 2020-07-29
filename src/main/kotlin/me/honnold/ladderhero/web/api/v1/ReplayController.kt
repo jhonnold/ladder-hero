@@ -4,10 +4,8 @@ import me.honnold.ladderhero.dao.domain.Replay
 import me.honnold.ladderhero.service.domain.ReplayService
 import me.honnold.ladderhero.service.dto.replay.ReplaySummary
 import org.slf4j.LoggerFactory
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.data.domain.PageRequest
+import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
@@ -19,8 +17,14 @@ class ReplayController(private val replayService: ReplayService) {
     }
 
     @GetMapping
-    fun getReplays(): Flux<ReplaySummary> {
-        return this.replayService.getReplays()
+    fun getReplays(
+        @RequestParam(defaultValue = "25") size: Int,
+        @RequestParam(defaultValue = "1") page: Int,
+        @RequestParam(required = false) profileId: Long?
+    ): Flux<ReplaySummary> {
+        val pageRequest = PageRequest.of(page - 1, size)
+
+        return this.replayService.getReplays(pageRequest, profileId)
     }
 
     @GetMapping("/{lookup}")

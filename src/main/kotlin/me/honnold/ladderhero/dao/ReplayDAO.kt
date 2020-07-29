@@ -4,6 +4,7 @@ import me.honnold.ladderhero.dao.domain.Replay
 import me.honnold.ladderhero.dao.value.ReplaySummaryRow
 import org.slf4j.LoggerFactory
 import org.springframework.dao.DataRetrievalFailureException
+import org.springframework.data.domain.PageRequest
 import org.springframework.data.r2dbc.core.DatabaseClient
 import org.springframework.data.relational.core.query.Criteria
 import org.springframework.stereotype.Service
@@ -33,12 +34,20 @@ class ReplayDAO(private val databaseClient: DatabaseClient) : DAO<Replay, UUID> 
             .first()
     }
 
-    fun findAll(): Flux<ReplaySummaryRow> {
-        return databaseClient.execute {
-            "select * from replay r " +
-                    "left join summary as s on r.id  = s.replay_id " +
-                    "left join player p on s.player_id = p.id"
-        }
+    fun findAll(pageRequest: PageRequest): Flux<ReplaySummaryRow> {
+        return databaseClient.execute(ReplaySummaryRow.ALL_QUERY)
+            .bind("offset", pageRequest.offset)
+            .bind("limit", pageRequest.pageSize)
+            .`as`(ReplaySummaryRow::class.java)
+            .fetch()
+            .all()
+    }
+
+    fun findAllByProfileId(profileId: Long, pageRequest: PageRequest): Flux<ReplaySummaryRow> {
+        return databaseClient.execute(ReplaySummaryRow.PROFILE_ID_QUERY)
+            .bind("profileId", profileId)
+            .bind("offset", pageRequest.offset)
+            .bind("limit", pageRequest.pageSize)
             .`as`(ReplaySummaryRow::class.java)
             .fetch()
             .all()

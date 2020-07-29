@@ -12,6 +12,7 @@ import me.honnold.ladderhero.util.windowsTimeToDate
 import me.honnold.sc2protocol.model.data.Blob
 import me.honnold.sc2protocol.model.data.Struct
 import org.slf4j.LoggerFactory
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -24,8 +25,13 @@ class ReplayService(private val replayDAO: ReplayDAO) {
         private val slugger = Slugify()
     }
 
-    fun getReplays(): Flux<ReplaySummary> {
-        return this.replayDAO.findAll()
+    fun getReplays(pageRequest: PageRequest, profileId: Long?): Flux<ReplaySummary> {
+        val replays = if (profileId == null)
+            this.replayDAO.findAll(pageRequest)
+        else
+            this.replayDAO.findAllByProfileId(profileId, pageRequest)
+
+        return replays
             .groupBy { row -> row.replayId }
             .flatMap { replayFlux ->
                 replayFlux.reduce(ReplaySummary(), { acc, r ->
@@ -40,6 +46,8 @@ class ReplayService(private val replayDAO: ReplayDAO) {
                     acc
                 })
             }
+            .sort { o1, o2 -> o2.playedAt.compareTo(o1.playedAt) }
+
     }
 
     fun getReplay(lookup: String): Mono<Replay> {
