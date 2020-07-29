@@ -8,6 +8,7 @@ import java.util.*
 
 data class Replay(
     @Id
+    @Column("id")
     var id: UUID? = null,
 
     @Column("file_upload_id")
@@ -22,11 +23,6 @@ data class Replay(
     @Column("played_at")
     var playedAt: LocalDateTime,
 
+    @Column("slug")
     var slug: String? = null
-) {
-    @Transient
-    var fileUpload: FileUpload? = null
-
-    @Transient
-    var summaries: List<Summary> = emptyList()
-}
+)

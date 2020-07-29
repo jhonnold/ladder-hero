@@ -39,12 +39,9 @@ data class SummarySnapshot(
     @Column("active_workers")
     var activeWorkers: Long = 0,
 
-    @Column("army_Value_minerals")
+    @Column("army_value_minerals")
     var armyValueMinerals: Long = 0,
 
-    @Column("army_Value_minerals")
+    @Column("army_value_minerals")
     var armyValueVespene: Long = 0
-) {
-    @Transient
-    var summary: Summary? = null
-}
+)
