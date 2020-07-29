@@ -4,6 +4,7 @@ import com.github.slugify.Slugify
 import me.honnold.ladderhero.dao.ReplayDAO
 import me.honnold.ladderhero.dao.domain.Replay
 import me.honnold.ladderhero.service.dto.replay.ReplayData
+import me.honnold.ladderhero.service.dto.replay.ReplaySummary
 import me.honnold.ladderhero.util.gameDuration
 import me.honnold.ladderhero.util.isUUID
 import me.honnold.ladderhero.util.toUUID
@@ -11,7 +12,6 @@ import me.honnold.ladderhero.util.windowsTimeToDate
 import me.honnold.sc2protocol.model.data.Blob
 import me.honnold.sc2protocol.model.data.Struct
 import org.slf4j.LoggerFactory
-import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -24,8 +24,22 @@ class ReplayService(private val replayDAO: ReplayDAO) {
         private val slugger = Slugify()
     }
 
-    fun getReplays(page: Pageable): Flux<Replay> {
-        return this.replayDAO.findAll(page)
+    fun getReplays(): Flux<ReplaySummary> {
+        return this.replayDAO.findAll()
+            .groupBy { row -> row.replayId }
+            .flatMap { replayFlux ->
+                replayFlux.reduce(ReplaySummary(), { acc, r ->
+                    acc.replayId = r.replayId
+                    acc.mapName = r.mapName
+                    acc.duration = r.duration
+                    acc.playedAt = r.playedAt
+                    acc.slug = r.replaySlug
+
+                    acc.players.add(ReplaySummary.ReplayPlayer(r.playerId, r.race, r.name, r.profileId))
+
+                    acc
+                })
+            }
     }
 
     fun getReplay(lookup: String): Mono<Replay> {

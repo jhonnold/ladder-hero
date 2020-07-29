@@ -1,10 +1,9 @@
 package me.honnold.ladderhero.dao
 
 import me.honnold.ladderhero.dao.domain.Replay
+import me.honnold.ladderhero.dao.value.ReplaySummaryRow
 import org.slf4j.LoggerFactory
 import org.springframework.dao.DataRetrievalFailureException
-import org.springframework.data.domain.Pageable
-import org.springframework.data.domain.Sort
 import org.springframework.data.r2dbc.core.DatabaseClient
 import org.springframework.data.relational.core.query.Criteria
 import org.springframework.stereotype.Service
@@ -34,11 +33,13 @@ class ReplayDAO(private val databaseClient: DatabaseClient) : DAO<Replay, UUID> 
             .first()
     }
 
-    fun findAll(page: Pageable): Flux<Replay> {
-        return databaseClient.select()
-            .from(Replay::class.java)
-            .orderBy(Sort.by("playedAt").descending())
-            .page(page)
+    fun findAll(): Flux<ReplaySummaryRow> {
+        return databaseClient.execute {
+            "select * from replay r " +
+                    "left join summary as s on r.id  = s.replay_id " +
+                    "left join player p on s.player_id = p.id"
+        }
+            .`as`(ReplaySummaryRow::class.java)
             .fetch()
             .all()
     }
