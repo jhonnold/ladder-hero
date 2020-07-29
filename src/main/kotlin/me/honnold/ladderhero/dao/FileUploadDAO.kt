@@ -17,8 +17,6 @@ class FileUploadDAO(private val databaseClient: DatabaseClient) : DAO<FileUpload
     }
 
     override fun findById(id: UUID): Mono<FileUpload> {
-        logger.debug("Finding file upload $id")
-
         return databaseClient.select()
             .from(FileUpload::class.java)
             .matching(where("id").`is`(id))

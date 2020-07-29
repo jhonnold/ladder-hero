@@ -2,6 +2,7 @@ package me.honnold.ladderhero.service
 
 import me.honnold.ladderhero.dao.domain.Player
 import me.honnold.ladderhero.repository.PlayerRepository
+import me.honnold.ladderhero.service.dto.replay.ReplayData
 import me.honnold.ladderhero.util.unescapeName
 import me.honnold.sc2protocol.model.data.Blob
 import me.honnold.sc2protocol.model.data.Struct
@@ -16,7 +17,7 @@ class PlayerService(private val playerRepository: PlayerRepository) {
         private val logger = LoggerFactory.getLogger(PlayerService::class.java)
     }
 
-    fun buildAndSavePlayers(data: ReplayProcessingService.ReplayData): Flux<PlayerData> {
+    fun buildAndSavePlayers(data: ReplayData): Flux<PlayerData> {
         val players: List<Struct> = data.details["m_playerList"]
         logger.debug("Replay included ${players.size} player(s)")
 

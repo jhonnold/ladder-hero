@@ -1,14 +1,12 @@
 package me.honnold.ladderhero.service.domain
 
 import com.github.slugify.Slugify
-import me.honnold.ladderhero.dao.domain.FileUpload
+import me.honnold.ladderhero.dao.ReplayDAO
 import me.honnold.ladderhero.dao.domain.Replay
-import me.honnold.ladderhero.repository.ReplayRepository
-import me.honnold.ladderhero.repository.SummaryRepository
-import me.honnold.ladderhero.service.ReplayProcessingService
-import me.honnold.ladderhero.service.SummaryService
 import me.honnold.ladderhero.service.dto.replay.ReplayData
 import me.honnold.ladderhero.util.gameDuration
+import me.honnold.ladderhero.util.isUUID
+import me.honnold.ladderhero.util.toUUID
 import me.honnold.ladderhero.util.windowsTimeToDate
 import me.honnold.sc2protocol.model.data.Blob
 import me.honnold.sc2protocol.model.data.Struct
@@ -18,50 +16,24 @@ import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.time.ZoneOffset
-import java.util.*
 
 @Service
-class ReplayService(
-    private val replayRepository: ReplayRepository,
-    private val summaryRepository: SummaryRepository,
-    private val summaryService: SummaryService
-) {
+class ReplayService(private val replayDAO: ReplayDAO) {
     companion object {
         private val logger = LoggerFactory.getLogger(ReplayService::class.java)
         private val slugger = Slugify()
     }
 
-    // TODO: Solve the N+1 problems that lie below this...
     fun getReplays(page: Pageable): Flux<Replay> {
-        return this.replayRepository.findPage(page.pageSize, page.offset)
-            .flatMap { replay ->
-                this.summaryRepository.getSummariesForReplayId(replay.id!!)
-                    .flatMap { this.summaryService.attachPlayer(it) }
-                    .collectList()
-                    .map { replay.summaries = it; replay }
-            }
+        return this.replayDAO.findAll(page)
     }
 
-    fun getReplay(id: UUID): Mono<Replay> {
-        return this.replayRepository.findById(id)
-            .flatMap { replay ->
-                this.summaryRepository.getSummariesForReplayId(replay.id!!)
-                    .flatMap { this.summaryService.attachPlayer(it) }
-                    .flatMap { this.summaryService.attachSummarySnapshots(it) }
-                    .collectList()
-                    .map { replay.summaries = it; replay }
-            }
-    }
-
-    fun getReplay(slug: String): Mono<Replay> {
-        return this.replayRepository.findBySlug(slug)
-            .flatMap { replay ->
-                this.summaryRepository.getSummariesForReplayId(replay.id!!)
-                    .flatMap { this.summaryService.attachPlayer(it) }
-                    .flatMap { this.summaryService.attachSummarySnapshots(it) }
-                    .collectList()
-                    .map { replay.summaries = it; replay }
-            }
+    fun getReplay(lookup: String): Mono<Replay> {
+        return if (lookup.isUUID())
+            this.replayDAO.findById(lookup.toUUID())
+                .onErrorResume { this.replayDAO.findBySlug(lookup) }
+        else
+            this.replayDAO.findBySlug(lookup)
     }
 
     fun buildAndSaveReplay(replayData: ReplayData): Mono<Replay> {
@@ -88,9 +60,6 @@ class ReplayService(
             slug = slug
         )
 
-        return this.replayRepository.save(replay)
-            .doOnSuccess { logger.info("Saved new replay ($slug)") }
-            .doOnError { logger.error("Unable to save replay ($slug) -- ${it.message}") }
-            .onErrorResume { logger.warn("The replay $slug has already been seen before"); Mono.empty() }
+        return this.replayDAO.save(replay)
     }
 }

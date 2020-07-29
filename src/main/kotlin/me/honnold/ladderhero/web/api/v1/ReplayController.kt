@@ -26,15 +26,6 @@ class ReplayController(private val replayService: ReplayService) {
 
     @GetMapping("/{lookup}")
     fun getReplay(@PathVariable lookup: String): Mono<Replay> {
-        return Mono.just(lookup)
-            .flatMap {
-                val id = UUID.fromString(lookup)
-
-                this.replayService.getReplay(id)
-            }
-            .onErrorResume {
-                logger.debug("$lookup is not a UUID, looking up as slug instead")
-                this.replayService.getReplay(lookup)
-            }
+        return this.replayService.getReplay(lookup)
     }
 }
