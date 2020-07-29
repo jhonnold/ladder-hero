@@ -42,6 +42,6 @@ data class SummarySnapshot(
     @Column("army_value_minerals")
     var armyValueMinerals: Long = 0,
 
-    @Column("army_value_minerals")
+    @Column("army_value_vespene")
     var armyValueVespene: Long = 0
 )
