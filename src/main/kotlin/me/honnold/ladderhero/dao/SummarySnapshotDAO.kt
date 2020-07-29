@@ -6,7 +6,6 @@ import org.springframework.dao.DataRetrievalFailureException
 import org.springframework.data.r2dbc.core.DatabaseClient
 import org.springframework.data.relational.core.query.Criteria
 import org.springframework.stereotype.Service
-import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toFlux
 import java.util.*
@@ -15,6 +14,14 @@ import java.util.*
 class SummarySnapshotDAO(private val databaseClient: DatabaseClient) : DAO<SummarySnapshot, UUID> {
     companion object {
         private val logger = LoggerFactory.getLogger(SummarySnapshotDAO::class.java)
+    }
+
+    override fun findById(id: UUID): Mono<SummarySnapshot> {
+        return databaseClient.select()
+            .from(SummarySnapshot::class.java)
+            .matching(Criteria.where("id").`is`(id))
+            .fetch()
+            .first()
     }
 
     override fun save(entity: SummarySnapshot): Mono<SummarySnapshot> {
@@ -27,7 +34,7 @@ class SummarySnapshotDAO(private val databaseClient: DatabaseClient) : DAO<Summa
             .first()
             .flatMap { uuid ->
                 if (uuid == null)
-                    throw DataRetrievalFailureException("Unable to load file upload by uuid")
+                    throw DataRetrievalFailureException("Unable to load summary snapshot by uuid")
 
                 databaseClient.select()
                     .from(SummarySnapshot::class.java)
@@ -39,7 +46,7 @@ class SummarySnapshotDAO(private val databaseClient: DatabaseClient) : DAO<Summa
             .doOnError { t -> logger.error("There was an issue saving $entity -- ${t.message}") }
     }
 
-    override fun saveAll(entities: Collection<SummarySnapshot>): Flux<SummarySnapshot> {
+    override fun saveAll(entities: List<SummarySnapshot>): Mono<List<SummarySnapshot>> {
         logger.debug("Saving ${entities.size} SummarySnapshots")
 
         return databaseClient.insert()
@@ -47,19 +54,20 @@ class SummarySnapshotDAO(private val databaseClient: DatabaseClient) : DAO<Summa
             .using(entities.toFlux())
             .map { row -> row.get(0, UUID::class.java) }
             .all()
-            .collectList()
-            .flatMapMany { ids ->
+            .flatMap { id ->
+                if (id == null)
+                    throw DataRetrievalFailureException("Unable to load summary snapshot by uuid")
+
                 databaseClient.select()
                     .from(SummarySnapshot::class.java)
-                    .matching(Criteria.where("id").`in`(ids))
+                    .matching(Criteria.where("id").`is`(id))
                     .fetch()
                     .all()
             }
-            .doOnComplete { logger.debug("Successfully saved ${entities.size} SummarySnapshots") }
+            .collectList()
+            .doOnSuccess { logger.debug("Successfully saved ${entities.size} SummarySnapshots") }
             .doOnError { t -> logger.error("There was an issue saving ${entities.size} SummarySnapshots -- ${t.message}") }
     }
 
-    override fun findById(id: UUID): Mono<SummarySnapshot> {
-        TODO("Not yet implemented")
-    }
+
 }

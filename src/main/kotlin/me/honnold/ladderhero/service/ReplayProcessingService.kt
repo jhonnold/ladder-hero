@@ -1,6 +1,8 @@
 package me.honnold.ladderhero.service
 
+import me.honnold.ladderhero.service.domain.PlayerService
 import me.honnold.ladderhero.service.domain.ReplayService
+import me.honnold.ladderhero.service.domain.SummaryService
 import me.honnold.ladderhero.service.dto.replay.ReplayData
 import me.honnold.ladderhero.service.dto.upload.UploadResult
 import org.slf4j.LoggerFactory
@@ -38,7 +40,7 @@ class ReplayProcessingService(
                 val replay = sequenceData.t2
                 val playerData = sequenceData.t3
 
-                this.summaryService.initializeSummary(replay, playerData)
+                this.summaryService.buildAndSaveSummary(data, replay, playerData)
                     .map { summary -> Tuples.of(data, replay, playerData, summary) }
             }
             .flatMap { sequenceData ->

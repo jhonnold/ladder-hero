@@ -103,7 +103,7 @@ class S3ClientService(s3Region: Region, s3CredentialsProvider: AwsCredentialsPro
                 UploadResult(fileKey, filePart.filename())
             }
             .doOnSuccess { logger.info("Successfully uploaded $it to ${this.s3Bucket}") }
-            .doOnError { t -> logger.error("There was an issue uploading ${filePart.filename()} -- ${t.message}")}
+            .doOnError { t -> logger.error("There was an issue uploading ${filePart.filename()} -- ${t.message}") }
             .onErrorResume { Mono.empty() }
     }
 

@@ -1,5 +1,6 @@
 package me.honnold.ladderhero.util
 
+import org.apache.commons.text.StringEscapeUtils
 import java.util.*
 
 fun String.isUUID(): Boolean {
@@ -13,3 +14,5 @@ fun String.isUUID(): Boolean {
 }
 
 fun String.toUUID(): UUID = UUID.fromString(this)
+
+fun unescapeName(name: String): String = StringEscapeUtils.unescapeHtml4(name).replace("<sp/>", " ")

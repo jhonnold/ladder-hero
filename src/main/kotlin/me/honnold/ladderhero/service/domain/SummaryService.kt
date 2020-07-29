@@ -1,13 +1,15 @@
-package me.honnold.ladderhero.service
+package me.honnold.ladderhero.service.domain
 
+import me.honnold.ladderhero.dao.SummaryDAO
+import me.honnold.ladderhero.dao.SummarySnapshotDAO
+import me.honnold.ladderhero.dao.domain.Player
 import me.honnold.ladderhero.dao.domain.Replay
 import me.honnold.ladderhero.dao.domain.Summary
 import me.honnold.ladderhero.dao.domain.SummarySnapshot
-import me.honnold.ladderhero.repository.PlayerRepository
-import me.honnold.ladderhero.repository.SummaryRepository
-import me.honnold.ladderhero.repository.SummarySnapshotRepository
 import me.honnold.ladderhero.service.dto.replay.ReplayData
 import me.honnold.ladderhero.util.getLong
+import me.honnold.ladderhero.util.unescapeName
+import me.honnold.sc2protocol.model.data.Blob
 import me.honnold.sc2protocol.model.data.Struct
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -17,40 +19,30 @@ import reactor.util.function.Tuples
 import kotlin.math.max
 
 @Service
-class SummaryService(
-    private val summaryRepository: SummaryRepository,
-    private val summarySnapshotService: SummarySnapshotService,
-    private val summarySnapshotRepository: SummarySnapshotRepository,
-    private val playerRepository: PlayerRepository
-) {
+class SummaryService(private val summaryDAO: SummaryDAO, private val summarySnapshotDAO: SummarySnapshotDAO) {
     companion object {
         private val logger = LoggerFactory.getLogger(SummaryService::class.java)
     }
 
-    fun attachSummarySnapshots(summary: Summary): Mono<Summary> {
-        return this.summarySnapshotRepository.findAllBySummaryId(summary.id!!)
-            .collectList()
-            .map { summary.snapshots = it; summary }
-    }
+    fun buildAndSaveSummary(data: ReplayData, replay: Replay, player: Player): Mono<Summary> {
+        val playerStructs: List<Struct> = data.details["m_playerList"]
+        val playerStruct = playerStructs.find { p ->
+            val toon: Struct = p["m_toon"]
+            val profileId: Long = toon["m_id"]
 
-    fun attachPlayer(summary: Summary): Mono<Summary> {
-        val id = summary.playerId ?: return Mono.empty()
+            player.profileId == profileId
+        }
+            ?: return Mono.empty()
 
-        return this.playerRepository.findById(id)
-            .map { summary.player = it; summary }
-    }
+        val workingId: Long = playerStruct["m_workingSetSlotId"]
+        val raceBlob: Blob = playerStruct["m_race"]
+        val race = raceBlob.value
+        val nameBlob: Blob = playerStruct["m_name"]
+        val name = unescapeName(nameBlob.value)
 
-    fun initializeSummary(replay: Replay, playerData: PlayerService.PlayerData): Mono<Summary> {
-        val summary = Summary(
-            replayId = replay.id,
-            playerId = playerData.player.id,
-            workingId = playerData.id,
-            race = playerData.race,
-            name = playerData.name
-        )
+        val summary = Summary(null, replay.id, player.id, workingId + 1, race, name)
 
-        return this.save(summary)
-            .doOnSuccess { logger.info("Successfully initialized summary for ${playerData.player.id} on ${replay.id} as $it") }
+        return this.summaryDAO.save(summary)
     }
 
     fun populateSummary(summary: Summary, data: ReplayData): Mono<Summary> {
@@ -110,7 +102,7 @@ class SummaryService(
                 )
             }
             .collectList()
-            .flatMap { this.summarySnapshotService.saveAll(it) }
+            .flatMap { this.summarySnapshotDAO.saveAll(it) }
 
         return snapshots.map {
             it.fold(Tuples.of(0L, 0L, 0L, 0L, 0L)) { acc, snapshot ->
@@ -161,15 +153,7 @@ class SummaryService(
                 summary.avgCollectionRateMinerals = acc.t3 / max(1, acc.t5)
                 summary.avgCollectionRateVespene = acc.t4 / max(1, acc.t5)
 
-                this.save(summary)
-                    .doOnSuccess { logger.info("Populated $summary") }
+                this.summaryDAO.save(summary)
             }
-    }
-
-    fun save(summary: Summary): Mono<Summary> {
-        return this.summaryRepository.save(summary)
-            .doFirst { logger.debug("Starting to save $summary") }
-            .doOnSuccess { logger.debug("Successfully saved $summary") }
-            .doOnError { logger.error("Unable to save $summary -- ${it.message}") }
     }
 }

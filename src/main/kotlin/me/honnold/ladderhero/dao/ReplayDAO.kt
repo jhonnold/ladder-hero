@@ -47,7 +47,7 @@ class ReplayDAO(private val databaseClient: DatabaseClient) : DAO<Replay, UUID> 
         return if (entity.id == null) this.create(entity) else this.update(entity)
     }
 
-    override fun saveAll(entities: Collection<Replay>): Flux<Replay> {
+    override fun saveAll(entities: List<Replay>): Mono<List<Replay>> {
         TODO("Not yet implemented")
     }
 

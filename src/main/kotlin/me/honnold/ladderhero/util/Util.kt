@@ -2,7 +2,6 @@ package me.honnold.ladderhero.util
 
 import me.honnold.sc2protocol.model.data.Struct
 import me.honnold.sc2protocol.model.event.Event
-import org.apache.commons.text.StringEscapeUtils
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import kotlin.math.floor
@@ -19,6 +18,5 @@ fun gameDuration(events: List<Event>): Long {
     return if (firstLeaveEvent == null) 0 else floor(firstLeaveEvent.loop / 22.4).toLong()
 }
 
-fun unescapeName(name: String): String = StringEscapeUtils.unescapeHtml4(name).replace("<sp/>", " ")
 
 fun Struct.getLong(key: String): Long = this[key]

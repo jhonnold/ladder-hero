@@ -26,8 +26,8 @@ class ReplayData(path: Path) {
 
     init {
         val archive = Archive(path)
-        val userDataContents = archive.userData?.content ?:
-                throw IllegalArgumentException("Path $path is not a Starcraft II Replay!")
+        val userDataContents =
+            archive.userData?.content ?: throw IllegalArgumentException("Path $path is not a Starcraft II Replay!")
 
         val defaultProtocol = Protocol(Protocol.DEFAULT)
         val header = defaultProtocol.decodeHeader(userDataContents)
