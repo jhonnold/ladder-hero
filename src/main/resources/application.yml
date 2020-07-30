@@ -1,12 +1,12 @@
 spring:
   r2dbc:
-    url: r2dbc:postgresql://localhost:5432/ladder-hero-dev
+    url: ${R2DBC_CONNECTION_STRING}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     max-size: 64
 
   flyway:
-    url: jdbc:postgresql://localhost:5432/ladder-hero-dev
+    url: ${JDBC_CONNECTION_STRING}
     user: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     platform: postgres
@@ -20,6 +20,6 @@ aws:
 
 logging:
   level:
-    root: WARN
+    root: INFO
     me:
       honnold: DEBUG
