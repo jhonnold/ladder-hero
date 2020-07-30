@@ -21,6 +21,7 @@ dependencies {
     implementation group: "me.honnold", name: "sc2protocol", version: "1.0.2"
 
     implementation group: "org.springframework.boot", name: "spring-boot-starter-webflux", version: "2.3.2.RELEASE"
+    implementation group: "org.springframework.boot", name: "spring-boot-starter-security", version: "2.3.2.RELEASE"
     implementation group: "org.springframework.boot", name: "spring-boot-starter-data-r2dbc", version: "2.3.2.RELEASE"
     annotationProcessor group: "org.springframework.boot", name: "spring-boot-configuration-processor", version: "2.3.2.RELEASE"
 
