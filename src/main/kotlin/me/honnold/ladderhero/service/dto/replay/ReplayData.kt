@@ -2,9 +2,9 @@ package me.honnold.ladderhero.service.dto.replay
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import me.honnold.mpq.Archive
-import me.honnold.sc2protocol.Protocol
-import me.honnold.sc2protocol.model.data.Struct
-import me.honnold.sc2protocol.model.event.Event
+import me.honnold.s2protocol.Protocol
+import me.honnold.s2protocol.model.data.Struct
+import me.honnold.s2protocol.model.event.Event
 import java.nio.file.Path
 
 class ReplayData(path: Path) {

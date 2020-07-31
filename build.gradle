@@ -18,7 +18,7 @@ dependencies {
     implementation group: "org.jetbrains.kotlin", name: "kotlin-reflect"
 
     implementation group: "me.honnold", name: "mpq", version: "1.0.1"
-    implementation group: "me.honnold", name: "sc2protocol", version: "1.0.2"
+    implementation group: "me.honnold", name: "s2protocol", version: "1.0.4"
 
     implementation group: "org.springframework.boot", name: "spring-boot-starter-webflux", version: "2.3.2.RELEASE"
     implementation group: "org.springframework.boot", name: "spring-boot-starter-security", version: "2.3.2.RELEASE"
@@ -80,7 +80,7 @@ bintray {
     publications = ['ladderhero']
 
     pkg {
-        repo = 'artifacts'
+        repo = 'maven'
         name = 'ladder-hero'
     }
 }

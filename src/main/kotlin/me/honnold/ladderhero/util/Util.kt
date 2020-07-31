@@ -1,7 +1,7 @@
 package me.honnold.ladderhero.util
 
-import me.honnold.sc2protocol.model.data.Struct
-import me.honnold.sc2protocol.model.event.Event
+import me.honnold.s2protocol.model.data.Struct
+import me.honnold.s2protocol.model.event.Event
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import kotlin.math.floor

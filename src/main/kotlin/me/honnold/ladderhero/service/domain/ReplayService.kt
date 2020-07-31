@@ -10,8 +10,8 @@ import me.honnold.ladderhero.util.gameDuration
 import me.honnold.ladderhero.util.isUUID
 import me.honnold.ladderhero.util.toUUID
 import me.honnold.ladderhero.util.windowsTimeToDate
-import me.honnold.sc2protocol.model.data.Blob
-import me.honnold.sc2protocol.model.data.Struct
+import me.honnold.s2protocol.model.data.Blob
+import me.honnold.s2protocol.model.data.Struct
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service

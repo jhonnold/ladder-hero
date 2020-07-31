@@ -3,7 +3,7 @@ package me.honnold.ladderhero.service.domain
 import me.honnold.ladderhero.dao.PlayerDAO
 import me.honnold.ladderhero.dao.domain.Player
 import me.honnold.ladderhero.service.dto.replay.ReplayData
-import me.honnold.sc2protocol.model.data.Struct
+import me.honnold.s2protocol.model.data.Struct
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux

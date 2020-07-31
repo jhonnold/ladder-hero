@@ -9,8 +9,8 @@ import me.honnold.ladderhero.dao.domain.SummarySnapshot
 import me.honnold.ladderhero.service.dto.replay.ReplayData
 import me.honnold.ladderhero.util.getLong
 import me.honnold.ladderhero.util.unescapeName
-import me.honnold.sc2protocol.model.data.Blob
-import me.honnold.sc2protocol.model.data.Struct
+import me.honnold.s2protocol.model.data.Blob
+import me.honnold.s2protocol.model.data.Struct
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
