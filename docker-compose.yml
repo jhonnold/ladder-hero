@@ -2,7 +2,7 @@ version: '3'
 services:
   api:
     container_name: ladder-hero-api
-    image: jhonnold/ladder-hero:dev
+    image: jhonnold/ladder-hero-api:dev
     ports:
     - 8080:8080
     logging:
