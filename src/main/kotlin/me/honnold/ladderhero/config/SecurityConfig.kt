@@ -3,6 +3,7 @@ package me.honnold.ladderhero.config
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpMethod
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity
 import org.springframework.security.config.web.server.ServerHttpSecurity
 import org.springframework.security.core.userdetails.MapReactiveUserDetailsService
@@ -20,11 +21,14 @@ open class SecurityConfig {
 
     @Bean
     open fun securityFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain {
-        return http
-            .csrf().disable()
-            .authorizeExchange().anyExchange().authenticated()
-            .and().httpBasic()
-            .and().formLogin().disable()
+        return http.csrf().disable()
+            .formLogin().disable()
+            .httpBasic().and()
+            .authorizeExchange()
+            .pathMatchers(HttpMethod.OPTIONS).permitAll()
+            .pathMatchers("/auth/**").permitAll()
+            .anyExchange().authenticated()
+            .and()
             .build()
     }
 
