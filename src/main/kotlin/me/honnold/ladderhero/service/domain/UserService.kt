@@ -12,9 +12,14 @@ class UserService(private val userDAO: UserDAO) {
         private val logger = LoggerFactory.getLogger(UserService::class.java)
     }
 
+    fun getUser(username: String): Mono<User> {
+        return this.userDAO.findByUsername(username)
+    }
+
     fun createUser(username: String, encodedPassword: String): Mono<User> {
         val user = User(username = username, encodedPassword = encodedPassword)
 
         return this.userDAO.save(user)
+
     }
 }

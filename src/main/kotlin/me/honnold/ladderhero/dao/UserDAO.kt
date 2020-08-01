@@ -1,6 +1,5 @@
 package me.honnold.ladderhero.dao
 
-import me.honnold.ladderhero.dao.domain.Summary
 import me.honnold.ladderhero.dao.domain.User
 import org.slf4j.LoggerFactory
 import org.springframework.dao.DataRetrievalFailureException
@@ -20,6 +19,14 @@ class UserDAO(private val databaseClient: DatabaseClient) : DAO<User, UUID> {
         return databaseClient.select()
             .from(User::class.java)
             .matching(Criteria.where("id").`is`(id))
+            .fetch()
+            .first()
+    }
+
+    fun findByUsername(username: String): Mono<User> {
+        return databaseClient.select()
+            .from(User::class.java)
+            .matching(Criteria.where("username").`is`(username))
             .fetch()
             .first()
     }
