@@ -16,6 +16,7 @@ data class ReplaySummary(
         val playerId: UUID,
         val race: String,
         val name: String,
-        val profileId: Long
+        val profileId: Long,
+        val teamId: Long
     )
 }
