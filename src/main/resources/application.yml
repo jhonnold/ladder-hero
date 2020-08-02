@@ -16,10 +16,6 @@ auth:
     secret: ${JWT_SECRET}
     expiration-duration: 1800000
 
-admin:
-  user: ${ADMIN_USER}
-  password: ${ADMIN_PASSWORD}
-
 aws:
   s3:
     region: us-east-2

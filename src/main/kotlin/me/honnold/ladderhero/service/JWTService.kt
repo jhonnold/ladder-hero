@@ -1,5 +1,6 @@
 package me.honnold.ladderhero.service
 
+import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
 import me.honnold.ladderhero.dao.domain.User
@@ -22,6 +23,14 @@ class JWTService(private val jwtSecret: String, private val jwtExpiration: Long)
         val token = this.generateToken(emptyMap(), user.username)
 
         return JWTToken(token)
+    }
+
+    fun getClaimsFromToken(token: String): Claims {
+        return Jwts.parserBuilder()
+            .setSigningKey(this.signingKey)
+            .build()
+            .parseClaimsJws(token)
+            .body
     }
 
     private fun generateToken(claims: Map<String, Any>, subject: String): String {
