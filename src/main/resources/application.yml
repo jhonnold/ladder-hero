@@ -11,9 +11,10 @@ spring:
     password: ${DB_PASSWORD}
     platform: postgres
 
-admin:
-  user: ${ADMIN_USER}
-  password: ${ADMIN_PASSWORD}
+auth:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-duration: 1800000
 
 aws:
   s3:
