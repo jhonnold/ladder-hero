@@ -36,6 +36,9 @@ data class ReplayDetailRow(
     @Column("player_id")
     var playerId: UUID,
 
+    @Column("team_id")
+    var teamId: Long,
+
     @Column("profile_id")
     var profileId: Long,
 
