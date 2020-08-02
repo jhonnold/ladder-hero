@@ -35,12 +35,13 @@ class SummaryService(private val summaryDAO: SummaryDAO, private val summarySnap
             ?: return Mono.empty()
 
         val workingId: Long = playerStruct["m_workingSetSlotId"]
+        val teamId: Long = playerStruct["m_teamId"]
         val raceBlob: Blob = playerStruct["m_race"]
         val race = raceBlob.value
         val nameBlob: Blob = playerStruct["m_name"]
         val name = unescapeName(nameBlob.value)
 
-        val summary = Summary(null, replay.id, player.id, workingId + 1, race, name)
+        val summary = Summary(null, replay.id, player.id, workingId + 1, teamId, race, name)
 
         return this.summaryDAO.save(summary)
     }

@@ -18,6 +18,9 @@ data class Summary(
     @Column("working_id")
     var workingId: Long,
 
+    @Column("team_id")
+    var teamId: Long,
+
     @Column("race")
     var race: String,
 
