@@ -11,6 +11,8 @@ import me.honnold.ladderhero.util.getLong
 import me.honnold.ladderhero.util.unescapeName
 import me.honnold.s2protocol.model.data.Blob
 import me.honnold.s2protocol.model.data.Struct
+import org.json.simple.JSONArray
+import org.json.simple.JSONObject
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
@@ -41,7 +43,20 @@ class SummaryService(private val summaryDAO: SummaryDAO, private val summarySnap
         val nameBlob: Blob = playerStruct["m_name"]
         val name = unescapeName(nameBlob.value)
 
-        val summary = Summary(null, replay.id, player.id, workingId + 1, teamId, race, name)
+        val jsonPlayers = data.metadata["Players"] as JSONArray
+        val jsonPlayer = jsonPlayers.find { p ->
+            val id = (p as JSONObject)["PlayerID"] as Number
+            id == workingId + 1
+        }
+
+        val didWin = if (jsonPlayer != null) {
+            val result = (jsonPlayer as JSONObject)["Result"] as String
+            result == "Win"
+        } else {
+            false
+        }
+
+        val summary = Summary(null, replay.id, player.id, workingId + 1, teamId, race, name, didWin)
 
         return this.summaryDAO.save(summary)
     }

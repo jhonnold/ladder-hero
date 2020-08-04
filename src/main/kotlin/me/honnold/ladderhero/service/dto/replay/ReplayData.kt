@@ -1,10 +1,12 @@
 package me.honnold.ladderhero.service.dto.replay
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import me.honnold.mpq.Archive
 import me.honnold.s2protocol.Protocol
 import me.honnold.s2protocol.model.data.Struct
 import me.honnold.s2protocol.model.event.Event
+import org.json.simple.JSONObject
+import org.json.simple.parser.JSONParser
+import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 
 class ReplayData(path: Path) {
@@ -18,7 +20,7 @@ class ReplayData(path: Path) {
 
     private val protocol: Protocol
 
-    val metadata: Map<*, *>
+    val metadata: JSONObject
     val initData: Struct
     val details: Struct
     val trackerEvents: List<Event>
@@ -35,7 +37,10 @@ class ReplayData(path: Path) {
 
         this.protocol = Protocol(replayBuildNumber.toInt())
 
-        this.metadata = ObjectMapper().readValue(archive.getFileContents(METADATA_FILE_NAME).array(), Map::class.java)
+        val metadataBuffer = archive.getFileContents(METADATA_FILE_NAME)
+        val metadataString = StandardCharsets.UTF_8.decode(metadataBuffer).toString()
+        this.metadata = JSONParser().parse(metadataString) as JSONObject
+
         this.initData = this.protocol.decodeInitData(archive.getFileContents(INIT_DATA_FILE_NAME))
         this.details = this.protocol.decodeDetails(archive.getFileContents(DETAILS_FILE_NAME))
         this.trackerEvents = this.protocol.decodeTrackerEvents(archive.getFileContents(TRACKER_EVENTS_FILE_NAME))

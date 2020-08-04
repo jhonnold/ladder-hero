@@ -27,6 +27,9 @@ data class Summary(
     @Column("name")
     var name: String,
 
+    @Column("did_win")
+    var didWin: Boolean,
+
     @Column("collected_minerals")
     var collectedMinerals: Long = 0,
 
