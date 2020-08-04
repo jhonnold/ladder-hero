@@ -54,7 +54,8 @@ class ReplayService(private val replayDAO: ReplayDAO) {
                                     player.race,
                                     player.name,
                                     player.profileId,
-                                    player.teamId
+                                    player.teamId,
+                                    player.didWin
                                 )
                             }
                         )
@@ -97,6 +98,7 @@ class ReplayService(private val replayDAO: ReplayDAO) {
                                     playerSnapshots[0].race,
                                     playerSnapshots[0].name,
                                     playerSnapshots[0].teamId,
+                                    playerSnapshots[0].didWin,
                                     playerSnapshots[0].profileId,
                                     playerSnapshots[0].collectedMinerals,
                                     playerSnapshots[0].collectedVespene,
@@ -139,9 +141,9 @@ class ReplayService(private val replayDAO: ReplayDAO) {
         val players: List<Struct> = replayData.details["m_playerList"]
         val matchup = players
             .groupBy { val team: Long = it["m_teamId"]; team }
-            .values.joinToString("-") {
-                it.joinToString("") {
-                    val raceBlob: Blob = it["m_race"]
+            .values.joinToString("-") { t ->
+                t.joinToString("") { p ->
+                    val raceBlob: Blob = p["m_race"]
                     raceBlob.value[0].toString()
                 }
             }

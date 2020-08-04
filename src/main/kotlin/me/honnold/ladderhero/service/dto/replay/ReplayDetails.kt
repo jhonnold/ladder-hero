@@ -18,6 +18,7 @@ data class ReplayDetails(
         val race: String = "",
         val name: String = "",
         val teamId: Long = 0,
+        val didWin: Boolean = false,
         val profileId: Long = 0,
         val collectedMinerals: Long = 0,
         val collectedVespene: Long = 0,

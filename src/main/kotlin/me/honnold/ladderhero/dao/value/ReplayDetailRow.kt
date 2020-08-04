@@ -39,6 +39,9 @@ data class ReplayDetailRow(
     @Column("team_id")
     var teamId: Long,
 
+    @Column("did_win")
+    var didWin: Boolean,
+
     @Column("profile_id")
     var profileId: Long,
 
