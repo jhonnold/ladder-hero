@@ -5,7 +5,7 @@ import org.json.simple.JSONObject
 
 class SC2BalanceData(data: JSONObject) {
     val locale: Map<Long, String>
-    val units: List<SC2Unit>
+    val units: Map<String, SC2Unit>
 
     init {
         val localeArray = data["locale"] as JSONArray
@@ -17,7 +17,11 @@ class SC2BalanceData(data: JSONObject) {
 
 
         val unitsArray = data["units"] as JSONArray
-        this.units = unitsArray.map { SC2Unit(it as JSONObject, this.locale) }
+        this.units = unitsArray.map { unitAny ->
+            val unitObj = unitAny as JSONObject
+
+            unitObj["id"] as String to SC2Unit(unitObj, this.locale)
+        }.toMap()
     }
 
     class SC2Unit(unitData: JSONObject, locale: Map<Long, String>) {
