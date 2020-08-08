@@ -1,5 +1,6 @@
 package me.honnold.ladderhero.dao.value
 
+import io.r2dbc.postgresql.codec.Json
 import org.springframework.data.relational.core.mapping.Column
 import java.time.LocalDateTime
 import java.util.*
@@ -97,7 +98,10 @@ data class ReplayDetailRow(
     var armyValueMinerals: Long,
 
     @Column("army_value_vespene")
-    var armyValueVespene: Long
+    var armyValueVespene: Long,
+
+    @Column("active_units")
+    var activeUnits: Json
 ) {
     companion object {
         const val ID_QUERY =

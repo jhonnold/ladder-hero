@@ -10,6 +10,7 @@ import me.honnold.ladderhero.dao.domain.Summary
 import me.honnold.ladderhero.dao.domain.SummarySnapshot
 import me.honnold.ladderhero.service.dto.replay.ReplayData
 import me.honnold.ladderhero.util.getLong
+import me.honnold.ladderhero.util.toJson
 import me.honnold.ladderhero.util.unescapeName
 import me.honnold.s2protocol.model.data.Blob
 import me.honnold.s2protocol.model.data.Struct
@@ -167,7 +168,7 @@ class SummaryService(
                     activeWorkers,
                     armyValueMinerals,
                     armyValueVespene,
-                    Json.of(JSONObject.toJSONString(activeUnits))
+                    JSONObject(activeUnits).toJson()
                 )
             }
             .toMono()

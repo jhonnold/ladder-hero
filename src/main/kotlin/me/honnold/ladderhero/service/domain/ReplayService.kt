@@ -6,10 +6,7 @@ import me.honnold.ladderhero.dao.domain.Replay
 import me.honnold.ladderhero.service.dto.replay.ReplayData
 import me.honnold.ladderhero.service.dto.replay.ReplayDetails
 import me.honnold.ladderhero.service.dto.replay.ReplaySummary
-import me.honnold.ladderhero.util.gameDuration
-import me.honnold.ladderhero.util.isUUID
-import me.honnold.ladderhero.util.toUUID
-import me.honnold.ladderhero.util.windowsTimeToDate
+import me.honnold.ladderhero.util.*
 import me.honnold.s2protocol.model.data.Blob
 import me.honnold.s2protocol.model.data.Struct
 import org.slf4j.LoggerFactory
@@ -120,7 +117,8 @@ class ReplayService(private val replayDAO: ReplayDAO) {
                                         snapshot.collectionRateVespene,
                                         snapshot.activeWorkers,
                                         snapshot.armyValueMinerals,
-                                        snapshot.armyValueVespene
+                                        snapshot.armyValueVespene,
+                                        snapshot.activeUnits.toJSONObject()
                                     )
                                 }
                             )

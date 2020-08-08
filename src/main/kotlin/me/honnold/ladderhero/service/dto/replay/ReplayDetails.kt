@@ -1,5 +1,6 @@
 package me.honnold.ladderhero.service.dto.replay
 
+import org.json.simple.JSONObject
 import java.time.LocalDateTime
 import java.util.*
 import kotlin.collections.ArrayList
@@ -32,14 +33,15 @@ data class ReplayDetails(
         data class PlayerSnapshot(
             val loop: Long = 0,
             val lostMinerals: Long = 0,
-            var lostVespene: Long = 0,
-            var unspentMinerals: Long = 0,
-            var unspentVespene: Long = 0,
-            var collectionRateMinerals: Long = 0,
-            var collectionRateVespene: Long = 0,
-            var activeWorkers: Long = 0,
-            var armyValueMinerals: Long = 0,
-            var armyValueVespene: Long = 0
+            val lostVespene: Long = 0,
+            val unspentMinerals: Long = 0,
+            val unspentVespene: Long = 0,
+            val collectionRateMinerals: Long = 0,
+            val collectionRateVespene: Long = 0,
+            val activeWorkers: Long = 0,
+            val armyValueMinerals: Long = 0,
+            val armyValueVespene: Long = 0,
+            val activeUnits: JSONObject? = null
         )
     }
 }
