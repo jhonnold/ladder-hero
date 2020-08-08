@@ -1,5 +1,7 @@
 package me.honnold.ladderhero.service.domain
 
+import io.r2dbc.postgresql.codec.Json
+import me.honnold.ladderhero.config.balance.SC2BalanceData
 import me.honnold.ladderhero.dao.SummaryDAO
 import me.honnold.ladderhero.dao.SummarySnapshotDAO
 import me.honnold.ladderhero.dao.domain.Player
@@ -11,17 +13,22 @@ import me.honnold.ladderhero.util.getLong
 import me.honnold.ladderhero.util.unescapeName
 import me.honnold.s2protocol.model.data.Blob
 import me.honnold.s2protocol.model.data.Struct
+import me.honnold.s2protocol.model.event.Event
 import org.json.simple.JSONArray
 import org.json.simple.JSONObject
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toMono
 import reactor.util.function.Tuples
 import kotlin.math.max
 
 @Service
-class SummaryService(private val summaryDAO: SummaryDAO, private val summarySnapshotDAO: SummarySnapshotDAO) {
+class SummaryService(
+    private val summaryDAO: SummaryDAO,
+    private val summarySnapshotDAO: SummarySnapshotDAO,
+    private val sc2BalanceData: SC2BalanceData
+) {
     companion object {
         private val logger = LoggerFactory.getLogger(SummaryService::class.java)
     }
@@ -69,20 +76,65 @@ class SummaryService(private val summaryDAO: SummaryDAO, private val summarySnap
 
         val maxGameLoop = firstLeaveGameEvent.loop
 
-        val summaryStateEvents = data.trackerEvents.filter {
-            if (it.name != "NNet.Replay.Tracker.SPlayerStatsEvent" || it.loop > maxGameLoop)
+        val summaryStateEvents = data.trackerEvents.filter { event ->
+            if (event.name != "NNet.Replay.Tracker.SPlayerStatsEvent" || event.loop > maxGameLoop)
                 false
             else {
-                val playerId: Long = it.data["m_playerId"]
+                val playerId: Long = event.data["m_playerId"]
                 playerId == summary.workingId
+            }
+        }
+
+
+        val unitEvents = data.trackerEvents.filter { event ->
+            if (event.loop > maxGameLoop) return@filter false
+
+            if (event.name == "NNet.Replay.Tracker.SUnitDiedEvent") return@filter true
+
+            if (event.name == "NNet.Replay.Tracker.SUnitBornEvent" || event.name == "NNet.Replay.Tracker.SUnitInitEvent") {
+                val playerId: Long = event.data["m_controlPlayerId"]
+
+                playerId == summary.workingId
+            } else {
+                false
             }
         }
 
         logger.debug("Found ${summaryStateEvents.size} stat events for ${summary.name} (${summary.workingId}) on ${summary.id}")
 
-        val snapshots = Flux.fromIterable(summaryStateEvents)
-            .map {
-                val stats: Struct = it.data["m_stats"]
+        val unitMap = mutableMapOf<Long, String>()
+        val unitEventIterator = unitEvents.listIterator()
+        var unitEvent: Event
+
+        val snapshots = summaryStateEvents
+            .map { summaryStateEvent ->
+                while (unitEventIterator.hasNext()) {
+                    unitEvent = unitEventIterator.next()
+                    if (unitEvent.loop > summaryStateEvent.loop) {
+                        unitEventIterator.previous()
+                        break
+                    }
+
+                    if (unitEvent.name == "NNet.Replay.Tracker.SUnitBornEvent" || unitEvent.name == "NNet.Replay.Tracker.SUnitInitEvent") {
+                        val unitTagIndex: Long = unitEvent.data["m_unitTagIndex"]
+                        val unitTagRecycle: Long = unitEvent.data["m_unitTagRecycle"]
+                        val unitTypeName: Blob = unitEvent.data["m_unitTypeName"]
+
+                        val unitId = (unitTagIndex shl 18) + unitTagRecycle
+                        unitMap[unitId] = unitTypeName.value
+                    } else {
+                        val unitTagIndex: Long = unitEvent.data["m_unitTagIndex"]
+                        val unitTagRecycle: Long = unitEvent.data["m_unitTagRecycle"]
+                        val unitId = (unitTagIndex shl 18) + unitTagRecycle
+                        unitMap.remove(unitId)
+                    }
+                }
+
+                val activeUnits = unitMap.values
+                    .groupBy { it }
+                    .mapValues { it.value.size }
+
+                val stats: Struct = summaryStateEvent.data["m_stats"]
 
                 val lostMinerals = stats.getLong("m_scoreValueMineralsLostArmy") +
                         stats.getLong("m_scoreValueMineralsLostEconomy") +
@@ -105,7 +157,7 @@ class SummaryService(private val summaryDAO: SummaryDAO, private val summarySnap
                 SummarySnapshot(
                     null,
                     summary.id,
-                    it.loop,
+                    summaryStateEvent.loop,
                     lostMinerals,
                     lostVespene,
                     unspentMinerals,
@@ -114,10 +166,11 @@ class SummaryService(private val summaryDAO: SummaryDAO, private val summarySnap
                     collectionRateVespene,
                     activeWorkers,
                     armyValueMinerals,
-                    armyValueVespene
+                    armyValueVespene,
+                    Json.of(JSONObject.toJSONString(activeUnits))
                 )
             }
-            .collectList()
+            .toMono()
             .flatMap { this.summarySnapshotDAO.saveAll(it) }
 
         return snapshots.map {
