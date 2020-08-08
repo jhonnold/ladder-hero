@@ -1,0 +1,1 @@
+ALTER TABLE public.summary_snapshot ADD active_units jsonb NULL;
