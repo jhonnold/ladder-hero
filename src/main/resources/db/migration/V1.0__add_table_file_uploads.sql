@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 CREATE TABLE public.file_uploads (
 	id uuid NOT NULL DEFAULT uuid_generate_v4(),
 	"key" uuid NOT NULL,

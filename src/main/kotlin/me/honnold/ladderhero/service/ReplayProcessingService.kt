@@ -21,8 +21,8 @@ class ReplayProcessingService(
         private val logger = LoggerFactory.getLogger(ReplayService::class.java)
     }
 
-    fun processUploadAsReplay(uploadResult: UploadResult): Mono<Void> {
-        return this.s3ClientService.download(uploadResult.fileKey)
+    fun processUploadAsReplay(uploadResult: UploadResult) {
+        this.s3ClientService.download(uploadResult.fileKey)
             .map { path -> ReplayData(path) }
             .flatMap { data ->
                 this.replayService.buildAndSaveReplay(data)
@@ -52,6 +52,6 @@ class ReplayProcessingService(
             }
             .doOnComplete { logger.info("Finished processing $uploadResult") }
             .doOnError { t -> logger.error("Unable to process $uploadResult -- ${t.message}") }
-            .then()
+            .subscribe()
     }
 }

@@ -21,6 +21,6 @@ class UploadService(
         return files
             .flatMap { part -> this.s3ClientService.upload(part) }
             .flatMap { result -> this.fileService.saveUploadResult(result) }
-            .doOnNext { result -> this.replayProcessingService.processUploadAsReplay(result).subscribe() }
+            .doOnNext { result -> this.replayProcessingService.processUploadAsReplay(result) }
     }
 }

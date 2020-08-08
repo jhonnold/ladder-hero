@@ -132,7 +132,7 @@ class ReplayService(private val replayDAO: ReplayDAO) {
     }
 
     fun buildAndSaveReplay(replayData: ReplayData): Mono<Replay> {
-        val mapName = replayData.metadata["Title"].toString()
+        val mapName = replayData.metadata.title
         val playedAt = windowsTimeToDate(replayData.details["m_timeUTC"])
         val duration = gameDuration(replayData.gameEvents)
 

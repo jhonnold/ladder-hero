@@ -1,14 +1,14 @@
 package me.honnold.ladderhero.service.domain
 
-import io.r2dbc.postgresql.codec.Json
-import me.honnold.ladderhero.config.balance.SC2BalanceData
 import me.honnold.ladderhero.dao.SummaryDAO
 import me.honnold.ladderhero.dao.SummarySnapshotDAO
 import me.honnold.ladderhero.dao.domain.Player
 import me.honnold.ladderhero.dao.domain.Replay
 import me.honnold.ladderhero.dao.domain.Summary
 import me.honnold.ladderhero.dao.domain.SummarySnapshot
+import me.honnold.ladderhero.exception.IllegalReplayException
 import me.honnold.ladderhero.service.dto.replay.ReplayData
+import me.honnold.ladderhero.util.ReplayUtil
 import me.honnold.ladderhero.util.getLong
 import me.honnold.ladderhero.util.toJson
 import me.honnold.ladderhero.util.unescapeName
@@ -27,45 +27,34 @@ import kotlin.math.max
 @Service
 class SummaryService(
     private val summaryDAO: SummaryDAO,
-    private val summarySnapshotDAO: SummarySnapshotDAO,
-    private val sc2BalanceData: SC2BalanceData
+    private val summarySnapshotDAO: SummarySnapshotDAO
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(SummaryService::class.java)
     }
 
     fun buildAndSaveSummary(data: ReplayData, replay: Replay, player: Player): Mono<Summary> {
-        val playerStructs: List<Struct> = data.details["m_playerList"]
-        val playerStruct = playerStructs.find { p ->
-            val toon: Struct = p["m_toon"]
-            val profileId: Long = toon["m_id"]
-
-            player.profileId == profileId
+        val playerSummary = ReplayUtil.findPlayerInReplayDetails(player.profileId, data.details)
+        if (playerSummary == null) {
+            logger.warn("Unable to locate ${player.profileId} in ${replay.slug}! No summary will be generated")
+            return Mono.empty()
         }
-            ?: return Mono.empty()
 
-        val workingId: Long = playerStruct["m_workingSetSlotId"]
-        val teamId: Long = playerStruct["m_teamId"]
-        val raceBlob: Blob = playerStruct["m_race"]
+        var workingId: Long = playerSummary["m_workingSetSlotId"]
+        workingId++ // Increment this value since it's 1 idx everywhere else
+
+        val teamId: Long = playerSummary["m_teamId"]
+
+        val raceBlob: Blob = playerSummary["m_race"]
         val race = raceBlob.value
-        val nameBlob: Blob = playerStruct["m_name"]
+
+        val nameBlob: Blob = playerSummary["m_name"]
         val name = unescapeName(nameBlob.value)
 
-        val jsonPlayers = data.metadata["Players"] as JSONArray
-        val jsonPlayer = jsonPlayers.find { p ->
-            val id = (p as JSONObject)["PlayerID"] as Number
-            id == workingId + 1
-        }
+        val jsonPlayer = data.metadata.players.find { p -> p.playerId == workingId }
+        val didWin = jsonPlayer?.result == "Win"
 
-        val didWin = if (jsonPlayer != null) {
-            val result = (jsonPlayer as JSONObject)["Result"] as String
-            result == "Win"
-        } else {
-            false
-        }
-
-        val summary = Summary(null, replay.id, player.id, workingId + 1, teamId, race, name, didWin)
-
+        val summary = Summary(null, replay.id, player.id, workingId, teamId, race, name, didWin)
         return this.summaryDAO.save(summary)
     }
 
@@ -73,12 +62,10 @@ class SummaryService(
         logger.debug("Starting to populate stats for $summary")
 
         val firstLeaveGameEvent = data.gameEvents.find { it.name == "NNet.Game.SGameUserLeaveEvent" }
-            ?: return Mono.empty()
-
-        val maxGameLoop = firstLeaveGameEvent.loop
+            ?: return Mono.error(IllegalReplayException("No user leave events found!"))
 
         val summaryStateEvents = data.trackerEvents.filter { event ->
-            if (event.name != "NNet.Replay.Tracker.SPlayerStatsEvent" || event.loop > maxGameLoop)
+            if (event.name != "NNet.Replay.Tracker.SPlayerStatsEvent" || event.loop > firstLeaveGameEvent.loop)
                 false
             else {
                 val playerId: Long = event.data["m_playerId"]
@@ -86,9 +73,8 @@ class SummaryService(
             }
         }
 
-
         val unitEvents = data.trackerEvents.filter { event ->
-            if (event.loop > maxGameLoop) return@filter false
+            if (event.loop > firstLeaveGameEvent.loop) return@filter false
 
             if (event.name == "NNet.Replay.Tracker.SUnitDiedEvent") return@filter true
 
@@ -184,7 +170,7 @@ class SummaryService(
             }
         }
             .flatMap { acc ->
-                val finalSummaryStateEvent = summaryStateEvents.findLast { e -> e.loop <= maxGameLoop }
+                val finalSummaryStateEvent = summaryStateEvents.findLast { e -> e.loop <= firstLeaveGameEvent.loop }
                     ?: return@flatMap Mono.empty<Summary>()
 
                 val stats: Struct = finalSummaryStateEvent.data["m_stats"]
