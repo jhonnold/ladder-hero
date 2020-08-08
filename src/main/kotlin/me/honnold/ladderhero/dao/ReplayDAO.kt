@@ -11,6 +11,7 @@ import org.springframework.data.relational.core.query.Criteria
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toMono
 import java.util.*
 
 @Service
@@ -72,7 +73,7 @@ class ReplayDAO(private val databaseClient: DatabaseClient) : DAO<Replay, UUID> 
 
     private fun update(entity: Replay): Mono<Replay> {
         val id = entity.id
-            ?: throw IllegalArgumentException("ID cannot be null when updating!")
+            ?: return IllegalArgumentException("ID cannot be null when updating!").toMono()
 
         return databaseClient.update()
             .table(Replay::class.java)
@@ -85,7 +86,8 @@ class ReplayDAO(private val databaseClient: DatabaseClient) : DAO<Replay, UUID> 
     }
 
     private fun create(entity: Replay): Mono<Replay> {
-        if (entity.id != null) throw IllegalArgumentException("ID must be null when creating!")
+        if (entity.id != null)
+            return IllegalArgumentException("ID must be null when creating!").toMono()
 
         return databaseClient.insert()
             .into(Replay::class.java)
@@ -94,9 +96,9 @@ class ReplayDAO(private val databaseClient: DatabaseClient) : DAO<Replay, UUID> 
             .first()
             .flatMap { uuid ->
                 if (uuid == null)
-                    throw DataRetrievalFailureException("Unable to save replay!")
-
-                this.findById(uuid)
+                    DataRetrievalFailureException("Unable to save replay!").toMono()
+                else
+                    this.findById(uuid)
             }
             .doOnSuccess { logger.debug("Successfully saved $entity") }
             .doOnError { t -> logger.error("There was an issue saving $entity -- ${t.message}") }

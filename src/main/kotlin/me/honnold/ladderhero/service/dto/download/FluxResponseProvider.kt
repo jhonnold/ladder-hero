@@ -1,6 +1,5 @@
 package me.honnold.ladderhero.service.dto.download
 
-import org.springframework.core.io.buffer.DefaultDataBufferFactory
 import reactor.core.publisher.Flux
 import software.amazon.awssdk.core.async.AsyncResponseTransformer
 import software.amazon.awssdk.core.async.SdkPublisher
@@ -21,11 +20,7 @@ class FluxResponseProvider : AsyncResponseTransformer<GetObjectResponse, FluxRes
     }
 
     override fun onStream(publisher: SdkPublisher<ByteBuffer>) {
-        val factory = DefaultDataBufferFactory()
-
         this.response.buffer = Flux.from(publisher)
-            .map { factory.wrap(it) }
-
         this.response.cf.complete(this.response)
     }
 

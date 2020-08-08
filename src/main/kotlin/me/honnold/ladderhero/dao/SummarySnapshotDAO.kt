@@ -8,6 +8,7 @@ import org.springframework.data.relational.core.query.Criteria
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toFlux
+import reactor.kotlin.core.publisher.toMono
 import java.util.*
 
 @Service
@@ -34,13 +35,9 @@ class SummarySnapshotDAO(private val databaseClient: DatabaseClient) : DAO<Summa
             .first()
             .flatMap { uuid ->
                 if (uuid == null)
-                    throw DataRetrievalFailureException("Unable to load summary snapshot by uuid")
-
-                databaseClient.select()
-                    .from(SummarySnapshot::class.java)
-                    .matching(Criteria.where("id").`is`(uuid))
-                    .fetch()
-                    .first()
+                    DataRetrievalFailureException("Unable to load summary snapshot by uuid").toMono()
+                else
+                    this.findById(uuid)
             }
             .doOnSuccess { logger.debug("Successfully saved $entity") }
             .doOnError { t -> logger.error("There was an issue saving $entity -- ${t.message}") }

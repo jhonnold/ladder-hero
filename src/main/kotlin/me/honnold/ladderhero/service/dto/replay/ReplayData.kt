@@ -7,8 +7,6 @@ import me.honnold.mpq.Archive
 import me.honnold.s2protocol.Protocol
 import me.honnold.s2protocol.model.data.Struct
 import me.honnold.s2protocol.model.event.Event
-import org.json.simple.JSONObject
-import org.json.simple.parser.JSONParser
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 

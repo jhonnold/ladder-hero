@@ -6,9 +6,14 @@ import me.honnold.ladderhero.dao.domain.Replay
 import me.honnold.ladderhero.service.dto.replay.ReplayData
 import me.honnold.ladderhero.service.dto.replay.ReplayDetails
 import me.honnold.ladderhero.service.dto.replay.ReplaySummary
-import me.honnold.ladderhero.util.*
+import me.honnold.ladderhero.util.gameDuration
+import me.honnold.ladderhero.util.isUUID
+import me.honnold.ladderhero.util.toUUID
+import me.honnold.ladderhero.util.windowsTimeToDate
 import me.honnold.s2protocol.model.data.Blob
 import me.honnold.s2protocol.model.data.Struct
+import org.json.simple.JSONObject
+import org.json.simple.parser.JSONParser
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
@@ -107,6 +112,8 @@ class ReplayService(private val replayDAO: ReplayDAO) {
 
                             playerDetails.snapshots.addAll(
                                 playerSnapshots.map { snapshot ->
+                                    val activeUnits = JSONParser().parse(snapshot.activeUnits.asString()) as JSONObject
+
                                     ReplayDetails.ReplayPlayer.PlayerSnapshot(
                                         snapshot.loop,
                                         snapshot.lostMinerals,
@@ -118,7 +125,7 @@ class ReplayService(private val replayDAO: ReplayDAO) {
                                         snapshot.activeWorkers,
                                         snapshot.armyValueMinerals,
                                         snapshot.armyValueVespene,
-                                        snapshot.activeUnits.toJSONObject()
+                                        activeUnits
                                     )
                                 }
                             )

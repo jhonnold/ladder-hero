@@ -7,6 +7,7 @@ import org.springframework.data.r2dbc.core.DatabaseClient
 import org.springframework.data.relational.core.query.Criteria
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toMono
 import java.util.*
 
 @Service
@@ -33,7 +34,7 @@ class SummaryDAO(private val databaseClient: DatabaseClient) : DAO<Summary, UUID
 
     private fun update(entity: Summary): Mono<Summary> {
         val id = entity.id
-            ?: throw IllegalArgumentException("ID cannot be null when updating!")
+            ?: return IllegalArgumentException("ID cannot be null when updating!").toMono()
 
         return databaseClient.update()
             .table(Summary::class.java)
@@ -46,7 +47,8 @@ class SummaryDAO(private val databaseClient: DatabaseClient) : DAO<Summary, UUID
     }
 
     private fun create(entity: Summary): Mono<Summary> {
-        if (entity.id != null) throw IllegalArgumentException("ID must be null when creating!")
+        if (entity.id != null)
+            return IllegalArgumentException("ID must be null when creating!").toMono()
 
         return databaseClient.insert()
             .into(Summary::class.java)
@@ -55,9 +57,9 @@ class SummaryDAO(private val databaseClient: DatabaseClient) : DAO<Summary, UUID
             .first()
             .flatMap { uuid ->
                 if (uuid == null)
-                    throw DataRetrievalFailureException("Unable to save Summary!")
-
-                this.findById(uuid)
+                    DataRetrievalFailureException("Unable to save Summary!").toMono()
+                else
+                    this.findById(uuid)
             }
             .doOnSuccess { logger.debug("Successfully saved $entity") }
             .doOnError { t -> logger.error("There was an issue saving $entity -- ${t.message}") }

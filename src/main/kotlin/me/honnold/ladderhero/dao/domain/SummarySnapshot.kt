@@ -45,6 +45,7 @@ data class SummarySnapshot(
     @Column("army_value_vespene")
     var armyValueVespene: Long = 0,
 
+    // JSONB in database, using Strings to avoid memory leaks
     @Column("active_units")
     var activeUnits: Json? = null
 )

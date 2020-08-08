@@ -7,6 +7,7 @@ import org.springframework.data.r2dbc.core.DatabaseClient
 import org.springframework.data.relational.core.query.Criteria
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toMono
 import java.util.*
 
 @Service
@@ -41,7 +42,7 @@ class UserDAO(private val databaseClient: DatabaseClient) : DAO<User, UUID> {
 
     private fun update(entity: User): Mono<User> {
         val id = entity.id
-            ?: throw IllegalArgumentException("ID cannot be null when updating!")
+            ?: return IllegalArgumentException("ID cannot be null when updating!").toMono()
 
         return databaseClient.update()
             .table(User::class.java)
@@ -54,7 +55,8 @@ class UserDAO(private val databaseClient: DatabaseClient) : DAO<User, UUID> {
     }
 
     private fun create(entity: User): Mono<User> {
-        if (entity.id != null) throw IllegalArgumentException("ID must be null when creating!")
+        if (entity.id != null)
+            return IllegalArgumentException("ID must be null when creating!").toMono()
 
         return databaseClient.insert()
             .into(User::class.java)

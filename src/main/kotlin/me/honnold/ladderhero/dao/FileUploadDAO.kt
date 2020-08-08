@@ -7,6 +7,7 @@ import org.springframework.data.r2dbc.core.DatabaseClient
 import org.springframework.data.relational.core.query.Criteria.where
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toMono
 import java.util.*
 
 @Service
@@ -33,7 +34,7 @@ class FileUploadDAO(private val databaseClient: DatabaseClient) : DAO<FileUpload
 
     private fun update(entity: FileUpload): Mono<FileUpload> {
         val id = entity.id
-            ?: throw IllegalArgumentException("ID cannot be null when updating!")
+            ?: return IllegalArgumentException("ID cannot be null when updating!").toMono()
 
         return databaseClient.update()
             .table(FileUpload::class.java)
@@ -46,7 +47,8 @@ class FileUploadDAO(private val databaseClient: DatabaseClient) : DAO<FileUpload
     }
 
     private fun create(entity: FileUpload): Mono<FileUpload> {
-        if (entity.id != null) throw IllegalArgumentException("ID must be null when creating!")
+        if (entity.id != null)
+            return IllegalArgumentException("ID must be null when creating!").toMono()
 
         return databaseClient.insert()
             .into(FileUpload::class.java)
@@ -55,9 +57,9 @@ class FileUploadDAO(private val databaseClient: DatabaseClient) : DAO<FileUpload
             .first()
             .flatMap { uuid ->
                 if (uuid == null)
-                    throw DataRetrievalFailureException("Unable to load file upload by uuid")
-
-                this.findById(uuid)
+                    DataRetrievalFailureException("Unable to load file upload by uuid").toMono()
+                else
+                    this.findById(uuid)
             }
             .doOnSuccess { logger.debug("Successfully saved $entity") }
             .doOnError { t -> logger.error("There was an issue saving $entity -- ${t.message}") }

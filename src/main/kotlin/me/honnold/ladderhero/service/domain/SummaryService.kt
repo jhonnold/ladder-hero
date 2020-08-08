@@ -1,5 +1,6 @@
 package me.honnold.ladderhero.service.domain
 
+import io.r2dbc.postgresql.codec.Json
 import me.honnold.ladderhero.dao.SummaryDAO
 import me.honnold.ladderhero.dao.SummarySnapshotDAO
 import me.honnold.ladderhero.dao.domain.Player
@@ -10,12 +11,10 @@ import me.honnold.ladderhero.exception.IllegalReplayException
 import me.honnold.ladderhero.service.dto.replay.ReplayData
 import me.honnold.ladderhero.util.ReplayUtil
 import me.honnold.ladderhero.util.getLong
-import me.honnold.ladderhero.util.toJson
 import me.honnold.ladderhero.util.unescapeName
 import me.honnold.s2protocol.model.data.Blob
 import me.honnold.s2protocol.model.data.Struct
 import me.honnold.s2protocol.model.event.Event
-import org.json.simple.JSONArray
 import org.json.simple.JSONObject
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -154,14 +153,16 @@ class SummaryService(
                     activeWorkers,
                     armyValueMinerals,
                     armyValueVespene,
-                    JSONObject(activeUnits).toJson()
+                    Json.of(JSONObject.toJSONString(activeUnits))
                 )
             }
             .toMono()
             .flatMap { this.summarySnapshotDAO.saveAll(it) }
 
-        return snapshots.map {
-            it.fold(Tuples.of(0L, 0L, 0L, 0L, 0L)) { acc, snapshot ->
+        return snapshots.map { snapshotsList ->
+            snapshotsList.fold(Tuples.of(0L, 0L, 0L, 0L, 0L)) { acc, snapshot ->
+                snapshot.activeUnits?.asString() // This field HAS to be consumed to prevent memory leaks
+
                 acc.mapT1 { it + snapshot.unspentMinerals }
                     .mapT2 { it + snapshot.unspentVespene }
                     .mapT3 { it + snapshot.collectionRateMinerals }
