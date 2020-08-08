@@ -18,7 +18,7 @@ dependencies {
     implementation group: "org.jetbrains.kotlin", name: "kotlin-reflect"
 
     implementation group: "me.honnold", name: "mpq", version: "1.0.1"
-    implementation group: "me.honnold", name: "s2protocol", version: "1.0.4"
+    implementation group: "me.honnold", name: "s2protocol", version: "1.0.5"
 
     implementation group: "org.springframework.boot", name: "spring-boot-starter-webflux", version: "2.3.2.RELEASE"
     implementation group: "org.springframework.boot", name: "spring-boot-starter-security", version: "2.3.2.RELEASE"
@@ -26,8 +26,8 @@ dependencies {
     annotationProcessor group: "org.springframework.boot", name: "spring-boot-configuration-processor", version: "2.3.2.RELEASE"
 
     implementation group: "org.flywaydb", name: "flyway-core", version: "6.5.2"
-    runtimeOnly group: "org.postgresql", name: "postgresql", version: "42.2.14"
     implementation group: "io.r2dbc", name: "r2dbc-postgresql", version: "0.8.4.RELEASE"
+    runtimeOnly group: "org.postgresql", name: "postgresql", version: "42.2.14"
 
     implementation group: "software.amazon.awssdk", name: "s3", version: "2.13.63"
     implementation group: "software.amazon.awssdk", name: "netty-nio-client", version: "2.13.63"
@@ -41,8 +41,6 @@ dependencies {
     implementation group: "org.apache.commons", name: "commons-compress", version: "1.20"
     implementation group: "com.github.slugify", name: "slugify", version: "2.4"
     implementation group: "com.googlecode.json-simple", name: "json-simple", version: "1.1.1"
-
-
 }
 
 compileKotlin {
