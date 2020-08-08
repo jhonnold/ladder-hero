@@ -27,9 +27,9 @@ class SC2BalanceData(data: JSONObject) {
     class SC2Unit(unitData: JSONObject, locale: Map<Long, String>) {
         val name: String
         val icon: String?
-        val costMinerals: Long?
-        val costVespene: Long?
-        val costSupply: Long?
+        val costMinerals: Long
+        val costVespene: Long
+        val costSupply: Long
 
         init {
             val meta = unitData["meta"] as JSONObject
@@ -38,9 +38,9 @@ class SC2BalanceData(data: JSONObject) {
 
             val cost = unitData["cost"] as JSONObject?
             if (cost == null) {
-                this.costMinerals = null
-                this.costVespene = null
-                this.costSupply = null
+                this.costMinerals = 0
+                this.costVespene = 0
+                this.costSupply = 0
             } else {
                 val minerals = cost["minerals"] as Long?
                 this.costMinerals = minerals ?: 0

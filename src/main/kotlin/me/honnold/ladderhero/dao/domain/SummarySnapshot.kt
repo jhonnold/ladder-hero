@@ -1,5 +1,6 @@
 package me.honnold.ladderhero.dao.domain
 
+import io.r2dbc.postgresql.codec.Json
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
@@ -42,5 +43,8 @@ data class SummarySnapshot(
     var armyValueMinerals: Long = 0,
 
     @Column("army_value_vespene")
-    var armyValueVespene: Long = 0
+    var armyValueVespene: Long = 0,
+
+    @Column("active_units")
+    var activeUnits: Json? = null
 )

@@ -27,7 +27,7 @@ dependencies {
 
     implementation group: "org.flywaydb", name: "flyway-core", version: "6.5.2"
     runtimeOnly group: "org.postgresql", name: "postgresql", version: "42.2.14"
-    runtimeOnly group: "io.r2dbc", name: "r2dbc-postgresql", version: "0.8.4.RELEASE"
+    implementation group: "io.r2dbc", name: "r2dbc-postgresql", version: "0.8.4.RELEASE"
 
     implementation group: "software.amazon.awssdk", name: "s3", version: "2.13.63"
     implementation group: "software.amazon.awssdk", name: "netty-nio-client", version: "2.13.63"
