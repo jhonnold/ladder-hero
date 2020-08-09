@@ -41,7 +41,7 @@ class S3ClientService(s3Region: Region, s3CredentialsProvider: AwsCredentialsPro
     init {
         val httpClient = NettyNioAsyncHttpClient.builder()
             .writeTimeout(Duration.ZERO)
-            .maxConcurrency(16)
+            .maxConcurrency(64)
             .build()
 
         val serviceConfiguration = S3Configuration.builder()
