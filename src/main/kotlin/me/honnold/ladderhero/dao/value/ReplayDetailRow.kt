@@ -55,6 +55,12 @@ data class ReplayDetailRow(
     @Column("loop")
     var loop: Long,
 
+    @Column("total_lost_minerals")
+    var totalLostMinerals: Long,
+
+    @Column("total_lost_vespene")
+    var totalLostVespene: Long,
+
     @Column("collected_minerals")
     var collectedMinerals: Long,
 

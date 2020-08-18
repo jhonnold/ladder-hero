@@ -36,10 +36,10 @@ data class Summary(
     @Column("collected_vespene")
     var collectedVespene: Long = 0,
 
-    @Column("lost_minerals")
+    @Column("total_lost_minerals")
     var lostMinerals: Long = 0,
 
-    @Column("lost_vespene")
+    @Column("total_lost_vespene")
     var lostVespene: Long = 0,
 
     @Column("avg_unspent_minerals")

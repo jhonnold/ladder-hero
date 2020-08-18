@@ -21,6 +21,8 @@ data class ReplayDetails(
         val teamId: Long = 0,
         val didWin: Boolean = false,
         val profileId: Long = 0,
+        val totalLostMinerals: Long = 0,
+        val totalLostVespene: Long = 0,
         val collectedMinerals: Long = 0,
         val collectedVespene: Long = 0,
         val avgUnspentMinerals: Long = 0,
