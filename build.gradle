@@ -1,6 +1,6 @@
 plugins {
     id "org.jetbrains.kotlin.jvm" version "1.3.72"
-    id "org.springframework.boot" version "2.3.2.RELEASE"
+    id "org.springframework.boot" version "2.3.3.RELEASE"
     id "com.jfrog.bintray" version "1.8.5"
     id "maven-publish"
 }
@@ -17,13 +17,10 @@ dependencies {
     implementation group: "org.jetbrains.kotlin", name: "kotlin-stdlib-jdk8"
     implementation group: "org.jetbrains.kotlin", name: "kotlin-reflect"
 
-    implementation group: "me.honnold", name: "mpq", version: "1.0.1"
-    implementation group: "me.honnold", name: "s2protocol", version: "1.0.5"
-
-    implementation group: "org.springframework.boot", name: "spring-boot-starter-webflux", version: "2.3.2.RELEASE"
-    implementation group: "org.springframework.boot", name: "spring-boot-starter-security", version: "2.3.2.RELEASE"
-    implementation group: "org.springframework.boot", name: "spring-boot-starter-data-r2dbc", version: "2.3.2.RELEASE"
-    annotationProcessor group: "org.springframework.boot", name: "spring-boot-configuration-processor", version: "2.3.2.RELEASE"
+    implementation group: "org.springframework.boot", name: "spring-boot-starter-webflux", version: "2.3.3.RELEASE"
+    implementation group: "org.springframework.boot", name: "spring-boot-starter-security", version: "2.3.3.RELEASE"
+    implementation group: "org.springframework.boot", name: "spring-boot-starter-data-r2dbc", version: "2.3.3.RELEASE"
+    annotationProcessor group: "org.springframework.boot", name: "spring-boot-configuration-processor", version: "2.3.3.RELEASE"
 
     implementation group: "org.flywaydb", name: "flyway-core", version: "6.5.2"
     implementation group: "io.r2dbc", name: "r2dbc-postgresql", version: "0.8.4.RELEASE"
@@ -41,6 +38,10 @@ dependencies {
     implementation group: "org.apache.commons", name: "commons-compress", version: "1.20"
     implementation group: "com.github.slugify", name: "slugify", version: "2.4"
     implementation group: "com.googlecode.json-simple", name: "json-simple", version: "1.1.1"
+
+    testImplementation group: "org.jetbrains.kotlin", name: "kotlin-test"
+    testImplementation group: "org.jetbrains.kotlin", name: "kotlin-test-junit"
+    testImplementation group: "org.hamcrest", name: "hamcrest", version: "2.2"
 }
 
 compileKotlin {
