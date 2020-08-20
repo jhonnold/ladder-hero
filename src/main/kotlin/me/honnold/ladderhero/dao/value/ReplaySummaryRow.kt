@@ -60,13 +60,11 @@ data class ReplaySummaryRow(
                     "where offset_ > :offset and offset_ <= :offset + :limit"
 
         const val PROFILE_ID_QUERY =
-            "select * from " +
-                    "(select *, dense_rank() over (order by played_at desc) offset_ from " +
-                    "(select *, s.id as summary_id from replay r, summary s, player p " +
-                    "where r.id = s.replay_id and s.player_id = p.id and p.profile_id = :profileId " +
-                    "order by played_at desc " +
-                    ") res " +
-                    ") res_offset " +
-                    "where offset_ > :offset and offset_ <= :offset + :limit"
+            "with rs as (select r.id " +
+                    "from replay r, summary s, player p " +
+                    "where r.id = s.replay_id and s.player_id = p.id and p.profile_id = :profileId  " +
+                    "order by r.played_at desc offset :offset limit :limit) " +
+                    "select *, s.id as summary_id from replay r, summary s, player p " +
+                    "where r.id in (select id from rs) and r.id = s.replay_id and s.player_id = p.id"
     }
 }
