@@ -1,9 +1,9 @@
 package me.honnold.s2protocol.model
 
-import me.honnold.s2protocol.model.type.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import me.honnold.s2protocol.model.type.*
 
 class TypeInfoTest {
     @Test
@@ -25,14 +25,14 @@ class TypeInfoTest {
 
         assertTrue(info is StructTypeInfo)
 
-        val expectedFields = listOf(
-            Field("m_flags", 8, 0),
-            Field("m_major", 8, 1),
-            Field("m_minor", 8, 2),
-            Field("m_revision", 8, 3),
-            Field("m_build", 5, 4),
-            Field("m_baseBuild", 5, 5)
-        )
+        val expectedFields =
+            listOf(
+                Field("m_flags", 8, 0),
+                Field("m_major", 8, 1),
+                Field("m_minor", 8, 2),
+                Field("m_revision", 8, 3),
+                Field("m_build", 5, 4),
+                Field("m_baseBuild", 5, 5))
 
         assertEquals(TypeMethod.STRUCT, info.method)
         assertEquals(expectedFields, info.p)
@@ -40,18 +40,19 @@ class TypeInfoTest {
 
     @Test
     fun choice() {
-        val src = "('_choice',[(0,2),{0:('m_uint6',2),1:('m_uint14',3),2:('m_uint22',4),3:('m_uint32',5)}]),"
+        val src =
+            "('_choice',[(0,2),{0:('m_uint6',2),1:('m_uint14',3),2:('m_uint22',4),3:('m_uint32',5)}]),"
         val info = TypeInfo.from(src)
 
         assertTrue(info is ChoiceTypeInfo)
 
         val expectedBounds = Bounds(0, 2)
-        val expectedFields = listOf(
-            Field("m_uint6", 2),
-            Field("m_uint14", 3),
-            Field("m_uint22", 4),
-            Field("m_uint32", 5)
-        )
+        val expectedFields =
+            listOf(
+                Field("m_uint6", 2),
+                Field("m_uint14", 3),
+                Field("m_uint22", 4),
+                Field("m_uint32", 5))
 
         assertEquals(TypeMethod.CHOICE, info.method)
         assertEquals(expectedBounds, info.p)

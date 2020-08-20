@@ -1,7 +1,7 @@
 package me.honnold.ladderhero.util
 
-import org.apache.commons.text.StringEscapeUtils
 import java.util.*
+import org.apache.commons.text.StringEscapeUtils
 
 fun String.isUUID(): Boolean {
     return try {

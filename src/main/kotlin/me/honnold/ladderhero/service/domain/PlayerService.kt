@@ -18,17 +18,15 @@ class PlayerService(private val playerDAO: PlayerDAO) {
         val players: List<Struct> = data.details["m_playerList"]
         logger.debug("Replay included ${players.size} player(s)")
 
-        return Flux.fromIterable(players)
-            .flatMap { struct ->
-                val toon: Struct = struct["m_toon"]
-                val profileId: Long = toon["m_id"]
-                val regionId: Long = toon["m_region"]
-                val realmId: Long = toon["m_realm"]
+        return Flux.fromIterable(players).flatMap { struct ->
+            val toon: Struct = struct["m_toon"]
+            val profileId: Long = toon["m_id"]
+            val regionId: Long = toon["m_region"]
+            val realmId: Long = toon["m_realm"]
 
-                val player = Player(null, profileId, regionId, realmId)
+            val player = Player(null, profileId, regionId, realmId)
 
-                this.playerDAO.save(player)
-                    .onErrorResume { this.playerDAO.findByProfileId(profileId) }
-            }
+            this.playerDAO.save(player).onErrorResume { this.playerDAO.findByProfileId(profileId) }
+        }
     }
 }

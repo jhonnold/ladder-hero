@@ -18,9 +18,12 @@ class ReplayController(private val replayService: ReplayService) {
 
     @GetMapping
     fun getReplays(
-        @RequestParam(defaultValue = "25") size: Int,
-        @RequestParam(defaultValue = "1") page: Int,
-        @RequestParam(required = false) profileId: Long?
+        @RequestParam(defaultValue = "25")
+        size: Int,
+        @RequestParam(defaultValue = "1")
+        page: Int,
+        @RequestParam(required = false)
+        profileId: Long?
     ): Flux<ReplaySummary> {
         val pageRequest = PageRequest.of(page - 1, size)
 

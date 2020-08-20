@@ -19,8 +19,7 @@ open class SecurityConfig(
 ) {
     @Bean
     open fun securityFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain {
-        return http
-            .exceptionHandling()
+        return http.exceptionHandling()
             .authenticationEntryPoint { swe, _ ->
                 Mono.fromRunnable { swe.response.statusCode = HttpStatus.UNAUTHORIZED }
             }
@@ -28,16 +27,23 @@ open class SecurityConfig(
                 Mono.fromRunnable { swe.response.statusCode = HttpStatus.FORBIDDEN }
             }
             .and()
-            .csrf().disable()
-            .formLogin().disable()
-            .httpBasic().disable()
+            .csrf()
+            .disable()
+            .formLogin()
+            .disable()
+            .httpBasic()
+            .disable()
             .authenticationManager(authManager)
             .securityContextRepository(securityContextRepository)
             .authorizeExchange()
-            .pathMatchers(HttpMethod.OPTIONS).permitAll()
-            .pathMatchers("/auth/**").permitAll()
-            .pathMatchers("/api/v1/**").permitAll()
-            .pathMatchers("/files/upload").authenticated()
+            .pathMatchers(HttpMethod.OPTIONS)
+            .permitAll()
+            .pathMatchers("/auth/**")
+            .permitAll()
+            .pathMatchers("/api/v1/**")
+            .permitAll()
+            .pathMatchers("/files/upload")
+            .authenticated()
             .and()
             .build()
     }

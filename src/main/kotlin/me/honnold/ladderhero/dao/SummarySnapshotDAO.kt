@@ -1,5 +1,6 @@
 package me.honnold.ladderhero.dao
 
+import java.util.*
 import me.honnold.ladderhero.dao.domain.SummarySnapshot
 import org.slf4j.LoggerFactory
 import org.springframework.dao.DataRetrievalFailureException
@@ -9,7 +10,6 @@ import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toFlux
 import reactor.kotlin.core.publisher.toMono
-import java.util.*
 
 @Service
 class SummarySnapshotDAO(private val databaseClient: DatabaseClient) : DAO<SummarySnapshot, UUID> {
@@ -18,7 +18,8 @@ class SummarySnapshotDAO(private val databaseClient: DatabaseClient) : DAO<Summa
     }
 
     override fun findById(id: UUID): Mono<SummarySnapshot> {
-        return databaseClient.select()
+        return databaseClient
+            .select()
             .from(SummarySnapshot::class.java)
             .matching(Criteria.where("id").`is`(id))
             .fetch()
@@ -28,16 +29,17 @@ class SummarySnapshotDAO(private val databaseClient: DatabaseClient) : DAO<Summa
     override fun save(entity: SummarySnapshot): Mono<SummarySnapshot> {
         logger.debug("Saving $entity")
 
-        return databaseClient.insert()
+        return databaseClient
+            .insert()
             .into(SummarySnapshot::class.java)
             .using(entity)
             .map { row -> row.get(0, UUID::class.java) }
             .first()
             .flatMap { uuid ->
                 if (uuid == null)
-                    DataRetrievalFailureException("Unable to load summary snapshot by uuid").toMono()
-                else
-                    this.findById(uuid)
+                    DataRetrievalFailureException("Unable to load summary snapshot by uuid")
+                        .toMono()
+                else this.findById(uuid)
             }
             .doOnSuccess { logger.debug("Successfully saved $entity") }
             .doOnError { t -> logger.error("There was an issue saving $entity -- ${t.message}") }
@@ -46,7 +48,8 @@ class SummarySnapshotDAO(private val databaseClient: DatabaseClient) : DAO<Summa
     override fun saveAll(entities: List<SummarySnapshot>): Mono<List<SummarySnapshot>> {
         logger.debug("Saving ${entities.size} SummarySnapshots")
 
-        return databaseClient.insert()
+        return databaseClient
+            .insert()
             .into(SummarySnapshot::class.java)
             .using(entities.toFlux())
             .map { row -> row.get(0, UUID::class.java) }
@@ -55,7 +58,8 @@ class SummarySnapshotDAO(private val databaseClient: DatabaseClient) : DAO<Summa
                 if (id == null)
                     throw DataRetrievalFailureException("Unable to load summary snapshot by uuid")
 
-                databaseClient.select()
+                databaseClient
+                    .select()
                     .from(SummarySnapshot::class.java)
                     .matching(Criteria.where("id").`is`(id))
                     .fetch()
@@ -63,8 +67,9 @@ class SummarySnapshotDAO(private val databaseClient: DatabaseClient) : DAO<Summa
             }
             .collectList()
             .doOnSuccess { logger.debug("Successfully saved ${entities.size} SummarySnapshots") }
-            .doOnError { t -> logger.error("There was an issue saving ${entities.size} SummarySnapshots -- ${t.message}") }
+            .doOnError { t ->
+                logger.error(
+                    "There was an issue saving ${entities.size} SummarySnapshots -- ${t.message}")
+            }
     }
-
-
 }

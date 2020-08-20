@@ -1,14 +1,14 @@
 package me.honnold.mpq
 
+import java.nio.ByteBuffer
+import java.nio.file.Paths
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import me.honnold.mpq.model.BlockEntry
 import me.honnold.mpq.model.HashEntry
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.contains
 import org.junit.Test
-import java.nio.ByteBuffer
-import java.nio.file.Paths
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 
 class ArchiveTest {
     @Test(expected = InvalidArchiveException::class)
@@ -22,14 +22,15 @@ class ArchiveTest {
     @Test
     fun userData() {
         val projectDirPath = Paths.get("").toAbsolutePath()
-        val resourcePath = Paths.get(projectDirPath.toString(), "/src/test/resources/archive.sc2replay")
+        val resourcePath =
+            Paths.get(projectDirPath.toString(), "/src/test/resources/archive.sc2replay")
 
         Archive(resourcePath).use {
             val userData = it.userData
             assertNotNull(userData)
             assertEquals(
-                    ByteBuffer.wrap(byteArrayOf('M'.toByte(), 'P'.toByte(), 'Q'.toByte(), 0x1B)),
-                    userData.magic)
+                ByteBuffer.wrap(byteArrayOf('M'.toByte(), 'P'.toByte(), 'Q'.toByte(), 0x1B)),
+                userData.magic)
             assertEquals(512, userData.userDataSize)
             assertEquals(1024, userData.headerOffset)
             assertEquals(115, userData.userDataHeaderSize)
@@ -39,14 +40,15 @@ class ArchiveTest {
     @Test
     fun header() {
         val projectDirPath = Paths.get("").toAbsolutePath()
-        val resourcePath = Paths.get(projectDirPath.toString(), "/src/test/resources/archive.sc2replay")
+        val resourcePath =
+            Paths.get(projectDirPath.toString(), "/src/test/resources/archive.sc2replay")
 
         Archive(resourcePath).use {
             val header = it.header
 
             assertEquals(
-                    ByteBuffer.wrap(byteArrayOf('M'.toByte(), 'P'.toByte(), 'Q'.toByte(), 0x1A)),
-                    header.magic)
+                ByteBuffer.wrap(byteArrayOf('M'.toByte(), 'P'.toByte(), 'Q'.toByte(), 0x1A)),
+                header.magic)
             assertEquals(208, header.headerSize)
             assertEquals(68730, header.archiveSize)
             assertEquals(3, header.formatVersion)
@@ -61,7 +63,8 @@ class ArchiveTest {
     @Test
     fun hashTable() {
         val projectDirPath = Paths.get("").toAbsolutePath()
-        val resourcePath = Paths.get(projectDirPath.toString(), "/src/test/resources/archive.sc2replay")
+        val resourcePath =
+            Paths.get(projectDirPath.toString(), "/src/test/resources/archive.sc2replay")
 
         Archive(resourcePath).use {
             val table = it.hashTable
@@ -87,7 +90,8 @@ class ArchiveTest {
     @Test
     fun blockTable() {
         val projectDirPath = Paths.get("").toAbsolutePath()
-        val resourcePath = Paths.get(projectDirPath.toString(), "/src/test/resources/archive.sc2replay")
+        val resourcePath =
+            Paths.get(projectDirPath.toString(), "/src/test/resources/archive.sc2replay")
 
         Archive(resourcePath).use {
             val table = it.blockTable
@@ -111,10 +115,13 @@ class ArchiveTest {
     @Test
     fun files() {
         val projectDirPath = Paths.get("").toAbsolutePath()
-        val resourcePath = Paths.get(projectDirPath.toString(), "/src/test/resources/archive.sc2replay")
+        val resourcePath =
+            Paths.get(projectDirPath.toString(), "/src/test/resources/archive.sc2replay")
 
         Archive(resourcePath).use {
-            assertThat(it.files, contains(
+            assertThat(
+                it.files,
+                contains(
                     "replay.attributes.events",
                     "replay.details",
                     "replay.details.backup",
@@ -129,15 +136,15 @@ class ArchiveTest {
                     "replay.smartcam.events",
                     "replay.sync.events",
                     "replay.sync.history",
-                    "replay.tracker.events"
-            ))
+                    "replay.tracker.events"))
         }
     }
 
     @Test
     fun fileContents() {
         val projectDirPath = Paths.get("").toAbsolutePath()
-        val resourcePath = Paths.get(projectDirPath.toString(), "/src/test/resources/archive.sc2replay")
+        val resourcePath =
+            Paths.get(projectDirPath.toString(), "/src/test/resources/archive.sc2replay")
 
         Archive(resourcePath).use {
             val fileContents = it.getFileContents("replay.resumable.events")
@@ -152,7 +159,8 @@ class ArchiveTest {
     @Test
     fun fileContents_empty() {
         val projectDirPath = Paths.get("").toAbsolutePath()
-        val resourcePath = Paths.get(projectDirPath.toString(), "/src/test/resources/archive.sc2replay")
+        val resourcePath =
+            Paths.get(projectDirPath.toString(), "/src/test/resources/archive.sc2replay")
 
         Archive(resourcePath).use {
             val fileContents = it.getFileContents("replay.sync.history")
@@ -164,17 +172,17 @@ class ArchiveTest {
     @Test(expected = Exception::class)
     fun fileContents_fileDoesntExist() {
         val projectDirPath = Paths.get("").toAbsolutePath()
-        val resourcePath = Paths.get(projectDirPath.toString(), "/src/test/resources/archive.sc2replay")
+        val resourcePath =
+            Paths.get(projectDirPath.toString(), "/src/test/resources/archive.sc2replay")
 
-        Archive(resourcePath).use {
-            it.getFileContents("random.txt")
-        }
+        Archive(resourcePath).use { it.getFileContents("random.txt") }
     }
 
     @Test
     fun fileContents_multi() {
         val projectDirPath = Paths.get("").toAbsolutePath()
-        val resourcePath = Paths.get(projectDirPath.toString(), "/src/test/resources/last_sector_compression.s2ma")
+        val resourcePath =
+            Paths.get(projectDirPath.toString(), "/src/test/resources/last_sector_compression.s2ma")
 
         Archive(resourcePath).use {
             val fileContents = it.getFileContents("t3CellFlags")

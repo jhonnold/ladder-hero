@@ -1,6 +1,7 @@
 package me.honnold.ladderhero.service.domain
 
 import io.r2dbc.postgresql.codec.Json
+import kotlin.math.max
 import me.honnold.ladderhero.dao.SummaryDAO
 import me.honnold.ladderhero.dao.SummarySnapshotDAO
 import me.honnold.ladderhero.dao.domain.Player
@@ -21,12 +22,10 @@ import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toMono
 import reactor.util.function.Tuples
-import kotlin.math.max
 
 @Service
 class SummaryService(
-    private val summaryDAO: SummaryDAO,
-    private val summarySnapshotDAO: SummarySnapshotDAO
+    private val summaryDAO: SummaryDAO, private val summarySnapshotDAO: SummarySnapshotDAO
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(SummaryService::class.java)
@@ -35,7 +34,8 @@ class SummaryService(
     fun buildAndSaveSummary(data: ReplayData, replay: Replay, player: Player): Mono<Summary> {
         val playerSummary = ReplayUtil.findPlayerInReplayDetails(player.profileId, data.details)
         if (playerSummary == null) {
-            logger.warn("Unable to locate ${player.profileId} in ${replay.slug}! No summary will be generated")
+            logger.warn(
+                "Unable to locate ${player.profileId} in ${replay.slug}! No summary will be generated")
             return Mono.empty()
         }
 
@@ -60,130 +60,144 @@ class SummaryService(
     fun populateSummary(summary: Summary, data: ReplayData): Mono<Summary> {
         logger.debug("Starting to populate stats for $summary")
 
-        val firstLeaveGameEvent = data.gameEvents.find { it.name == "NNet.Game.SGameUserLeaveEvent" }
-            ?: return Mono.error(IllegalReplayException("No user leave events found!"))
+        val firstLeaveGameEvent =
+            data.gameEvents.find { it.name == "NNet.Game.SGameUserLeaveEvent" }
+                ?: return Mono.error(IllegalReplayException("No user leave events found!"))
 
-        val summaryStateEvents = data.trackerEvents.filter { event ->
-            if (event.name != "NNet.Replay.Tracker.SPlayerStatsEvent" || event.loop > firstLeaveGameEvent.loop)
-                false
-            else {
-                val playerId: Long = event.data["m_playerId"]
-                playerId == summary.workingId
+        val summaryStateEvents =
+            data.trackerEvents.filter { event ->
+                if (event.name != "NNet.Replay.Tracker.SPlayerStatsEvent" ||
+                    event.loop > firstLeaveGameEvent.loop)
+                    false
+                else {
+                    val playerId: Long = event.data["m_playerId"]
+                    playerId == summary.workingId
+                }
             }
-        }
 
-        val unitEvents = data.trackerEvents.filter { event ->
-            if (event.loop > firstLeaveGameEvent.loop) return@filter false
+        val unitEvents =
+            data.trackerEvents.filter { event ->
+                if (event.loop > firstLeaveGameEvent.loop) return@filter false
 
-            if (event.name == "NNet.Replay.Tracker.SUnitDiedEvent") return@filter true
+                if (event.name == "NNet.Replay.Tracker.SUnitDiedEvent") return@filter true
 
-            if (event.name == "NNet.Replay.Tracker.SUnitBornEvent" || event.name == "NNet.Replay.Tracker.SUnitInitEvent") {
-                val playerId: Long = event.data["m_controlPlayerId"]
+                if (event.name == "NNet.Replay.Tracker.SUnitBornEvent" ||
+                    event.name == "NNet.Replay.Tracker.SUnitInitEvent") {
+                    val playerId: Long = event.data["m_controlPlayerId"]
 
-                playerId == summary.workingId
-            } else {
-                false
+                    playerId == summary.workingId
+                } else {
+                    false
+                }
             }
-        }
 
-        logger.debug("Found ${summaryStateEvents.size} stat events for ${summary.name} (${summary.workingId}) on ${summary.id}")
+        logger.debug(
+            "Found ${summaryStateEvents.size} stat events for ${summary.name} (${summary.workingId}) on ${summary.id}")
 
         val unitMap = mutableMapOf<Long, String>()
         val unitEventIterator = unitEvents.listIterator()
         var unitEvent: Event
 
-        val snapshots = summaryStateEvents
-            .map { summaryStateEvent ->
-                while (unitEventIterator.hasNext()) {
-                    unitEvent = unitEventIterator.next()
-                    if (unitEvent.loop > summaryStateEvent.loop) {
-                        unitEventIterator.previous()
-                        break
+        val snapshots =
+            summaryStateEvents
+                .map { summaryStateEvent ->
+                    while (unitEventIterator.hasNext()) {
+                        unitEvent = unitEventIterator.next()
+                        if (unitEvent.loop > summaryStateEvent.loop) {
+                            unitEventIterator.previous()
+                            break
+                        }
+
+                        if (unitEvent.name == "NNet.Replay.Tracker.SUnitBornEvent" ||
+                            unitEvent.name == "NNet.Replay.Tracker.SUnitInitEvent") {
+                            val unitTagIndex: Long = unitEvent.data["m_unitTagIndex"]
+                            val unitTagRecycle: Long = unitEvent.data["m_unitTagRecycle"]
+                            val unitTypeName: Blob = unitEvent.data["m_unitTypeName"]
+
+                            val unitId = (unitTagIndex shl 18) + unitTagRecycle
+                            unitMap[unitId] = unitTypeName.value
+                        } else {
+                            val unitTagIndex: Long = unitEvent.data["m_unitTagIndex"]
+                            val unitTagRecycle: Long = unitEvent.data["m_unitTagRecycle"]
+                            val unitId = (unitTagIndex shl 18) + unitTagRecycle
+                            unitMap.remove(unitId)
+                        }
                     }
 
-                    if (unitEvent.name == "NNet.Replay.Tracker.SUnitBornEvent" || unitEvent.name == "NNet.Replay.Tracker.SUnitInitEvent") {
-                        val unitTagIndex: Long = unitEvent.data["m_unitTagIndex"]
-                        val unitTagRecycle: Long = unitEvent.data["m_unitTagRecycle"]
-                        val unitTypeName: Blob = unitEvent.data["m_unitTypeName"]
+                    val activeUnits = unitMap.values.groupBy { it }.mapValues { it.value.size }
 
-                        val unitId = (unitTagIndex shl 18) + unitTagRecycle
-                        unitMap[unitId] = unitTypeName.value
-                    } else {
-                        val unitTagIndex: Long = unitEvent.data["m_unitTagIndex"]
-                        val unitTagRecycle: Long = unitEvent.data["m_unitTagRecycle"]
-                        val unitId = (unitTagIndex shl 18) + unitTagRecycle
-                        unitMap.remove(unitId)
-                    }
+                    val stats: Struct = summaryStateEvent.data["m_stats"]
+
+                    val lostMinerals =
+                        stats.getLong("m_scoreValueMineralsLostArmy") +
+                            stats.getLong("m_scoreValueMineralsLostEconomy") +
+                            stats.getLong("m_scoreValueMineralsLostTechnology")
+                    val lostVespene =
+                        stats.getLong("m_scoreValueVespeneLostArmy") +
+                            stats.getLong("m_scoreValueVespeneLostEconomy") +
+                            stats.getLong("m_scoreValueVespeneLostTechnology")
+
+                    val unspentMinerals = stats.getLong("m_scoreValueMineralsCurrent")
+                    val unspentVespene = stats.getLong("m_scoreValueVespeneCurrent")
+
+                    val collectionRateMinerals = stats.getLong("m_scoreValueMineralsCollectionRate")
+                    val collectionRateVespene = stats.getLong("m_scoreValueVespeneCollectionRate")
+
+                    val activeWorkers = stats.getLong("m_scoreValueWorkersActiveCount")
+
+                    val armyValueMinerals = stats.getLong("m_scoreValueMineralsUsedCurrentArmy")
+                    val armyValueVespene = stats.getLong("m_scoreValueVespeneUsedCurrentArmy")
+
+                    SummarySnapshot(
+                        null,
+                        summary.id,
+                        summaryStateEvent.loop,
+                        lostMinerals,
+                        lostVespene,
+                        unspentMinerals,
+                        unspentVespene,
+                        collectionRateMinerals,
+                        collectionRateVespene,
+                        activeWorkers,
+                        armyValueMinerals,
+                        armyValueVespene,
+                        Json.of(JSONObject.toJSONString(activeUnits)))
                 }
+                .toMono()
+                .flatMap { this.summarySnapshotDAO.saveAll(it) }
 
-                val activeUnits = unitMap.values
-                    .groupBy { it }
-                    .mapValues { it.value.size }
+        return snapshots
+            .map { snapshotsList ->
+                snapshotsList.fold(Tuples.of(0L, 0L, 0L, 0L, 0L)) { acc, snapshot ->
+                    snapshot.activeUnits
+                        ?.asString() // This field HAS to be consumed to prevent memory leaks
 
-                val stats: Struct = summaryStateEvent.data["m_stats"]
-
-                val lostMinerals = stats.getLong("m_scoreValueMineralsLostArmy") +
-                        stats.getLong("m_scoreValueMineralsLostEconomy") +
-                        stats.getLong("m_scoreValueMineralsLostTechnology")
-                val lostVespene = stats.getLong("m_scoreValueVespeneLostArmy") +
-                        stats.getLong("m_scoreValueVespeneLostEconomy") +
-                        stats.getLong("m_scoreValueVespeneLostTechnology")
-
-                val unspentMinerals = stats.getLong("m_scoreValueMineralsCurrent")
-                val unspentVespene = stats.getLong("m_scoreValueVespeneCurrent")
-
-                val collectionRateMinerals = stats.getLong("m_scoreValueMineralsCollectionRate")
-                val collectionRateVespene = stats.getLong("m_scoreValueVespeneCollectionRate")
-
-                val activeWorkers = stats.getLong("m_scoreValueWorkersActiveCount")
-
-                val armyValueMinerals = stats.getLong("m_scoreValueMineralsUsedCurrentArmy")
-                val armyValueVespene = stats.getLong("m_scoreValueVespeneUsedCurrentArmy")
-
-                SummarySnapshot(
-                    null,
-                    summary.id,
-                    summaryStateEvent.loop,
-                    lostMinerals,
-                    lostVespene,
-                    unspentMinerals,
-                    unspentVespene,
-                    collectionRateMinerals,
-                    collectionRateVespene,
-                    activeWorkers,
-                    armyValueMinerals,
-                    armyValueVespene,
-                    Json.of(JSONObject.toJSONString(activeUnits))
-                )
+                    acc
+                        .mapT1 { it + snapshot.unspentMinerals }
+                        .mapT2 { it + snapshot.unspentVespene }
+                        .mapT3 { it + snapshot.collectionRateMinerals }
+                        .mapT4 { it + snapshot.collectionRateVespene }
+                        .mapT5 { it + 1 }
+                }
             }
-            .toMono()
-            .flatMap { this.summarySnapshotDAO.saveAll(it) }
-
-        return snapshots.map { snapshotsList ->
-            snapshotsList.fold(Tuples.of(0L, 0L, 0L, 0L, 0L)) { acc, snapshot ->
-                snapshot.activeUnits?.asString() // This field HAS to be consumed to prevent memory leaks
-
-                acc.mapT1 { it + snapshot.unspentMinerals }
-                    .mapT2 { it + snapshot.unspentVespene }
-                    .mapT3 { it + snapshot.collectionRateMinerals }
-                    .mapT4 { it + snapshot.collectionRateVespene }
-                    .mapT5 { it + 1 }
-            }
-        }
             .flatMap { acc ->
-                val finalSummaryStateEvent = summaryStateEvents.findLast { e -> e.loop <= firstLeaveGameEvent.loop }
-                    ?: return@flatMap Mono.empty<Summary>()
+                val finalSummaryStateEvent =
+                    summaryStateEvents.findLast { e -> e.loop <= firstLeaveGameEvent.loop }
+                        ?: return@flatMap Mono.empty<Summary>()
 
                 val stats: Struct = finalSummaryStateEvent.data["m_stats"]
 
-                val lostMinerals = stats.getLong("m_scoreValueMineralsLostArmy") +
+                val lostMinerals =
+                    stats.getLong("m_scoreValueMineralsLostArmy") +
                         stats.getLong("m_scoreValueMineralsLostEconomy") +
                         stats.getLong("m_scoreValueMineralsLostTechnology")
-                val lostVespene = stats.getLong("m_scoreValueVespeneLostArmy") +
+                val lostVespene =
+                    stats.getLong("m_scoreValueVespeneLostArmy") +
                         stats.getLong("m_scoreValueVespeneLostEconomy") +
                         stats.getLong("m_scoreValueVespeneLostTechnology")
 
-                val collectedMinerals = stats.getLong("m_scoreValueMineralsCurrent") +
+                val collectedMinerals =
+                    stats.getLong("m_scoreValueMineralsCurrent") +
                         stats.getLong("m_scoreValueMineralsUsedInProgressArmy") +
                         stats.getLong("m_scoreValueMineralsUsedInProgressEconomy") +
                         stats.getLong("m_scoreValueMineralsUsedInProgressTechnology") +
@@ -192,7 +206,8 @@ class SummaryService(
                         stats.getLong("m_scoreValueMineralsUsedCurrentTechnology") +
                         lostMinerals
 
-                val collectedVespene = stats.getLong("m_scoreValueVespeneCurrent") +
+                val collectedVespene =
+                    stats.getLong("m_scoreValueVespeneCurrent") +
                         stats.getLong("m_scoreValueVespeneUsedInProgressArmy") +
                         stats.getLong("m_scoreValueVespeneUsedInProgressEconomy") +
                         stats.getLong("m_scoreValueVespeneUsedInProgressTechnology") +

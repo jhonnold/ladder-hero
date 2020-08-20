@@ -1,5 +1,6 @@
 package me.honnold.ladderhero.dao
 
+import java.util.*
 import me.honnold.ladderhero.dao.domain.User
 import org.slf4j.LoggerFactory
 import org.springframework.dao.DataRetrievalFailureException
@@ -8,7 +9,6 @@ import org.springframework.data.relational.core.query.Criteria
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toMono
-import java.util.*
 
 @Service
 class UserDAO(private val databaseClient: DatabaseClient) : DAO<User, UUID> {
@@ -17,7 +17,8 @@ class UserDAO(private val databaseClient: DatabaseClient) : DAO<User, UUID> {
     }
 
     override fun findById(id: UUID): Mono<User> {
-        return databaseClient.select()
+        return databaseClient
+            .select()
             .from(User::class.java)
             .matching(Criteria.where("id").`is`(id))
             .fetch()
@@ -25,7 +26,8 @@ class UserDAO(private val databaseClient: DatabaseClient) : DAO<User, UUID> {
     }
 
     fun findByUsername(username: String): Mono<User> {
-        return databaseClient.select()
+        return databaseClient
+            .select()
             .from(User::class.java)
             .matching(Criteria.where("username").`is`(username))
             .fetch()
@@ -41,10 +43,12 @@ class UserDAO(private val databaseClient: DatabaseClient) : DAO<User, UUID> {
     }
 
     private fun update(entity: User): Mono<User> {
-        val id = entity.id
-            ?: return IllegalArgumentException("ID cannot be null when updating!").toMono()
+        val id =
+            entity.id
+                ?: return IllegalArgumentException("ID cannot be null when updating!").toMono()
 
-        return databaseClient.update()
+        return databaseClient
+            .update()
             .table(User::class.java)
             .using(entity)
             .fetch()
@@ -58,7 +62,8 @@ class UserDAO(private val databaseClient: DatabaseClient) : DAO<User, UUID> {
         if (entity.id != null)
             return IllegalArgumentException("ID must be null when creating!").toMono()
 
-        return databaseClient.insert()
+        return databaseClient
+            .insert()
             .into(User::class.java)
             .using(entity)
             .map { row -> row.get(0, UUID::class.java) }
@@ -66,8 +71,7 @@ class UserDAO(private val databaseClient: DatabaseClient) : DAO<User, UUID> {
             .flatMap { uuid ->
                 if (uuid == null)
                     Mono.error<User>(DataRetrievalFailureException("Unable to save Summary!"))
-                else
-                    this.findById(uuid)
+                else this.findById(uuid)
             }
             .doOnSuccess { logger.debug("Successfully saved $entity") }
             .doOnError { t -> logger.error("There was an issue saving $entity -- ${t.message}") }

@@ -1,5 +1,6 @@
 package me.honnold.ladderhero.dao
 
+import java.util.*
 import me.honnold.ladderhero.dao.domain.FileUpload
 import org.slf4j.LoggerFactory
 import org.springframework.dao.DataRetrievalFailureException
@@ -8,7 +9,6 @@ import org.springframework.data.relational.core.query.Criteria.where
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toMono
-import java.util.*
 
 @Service
 class FileUploadDAO(private val databaseClient: DatabaseClient) : DAO<FileUpload, UUID> {
@@ -17,7 +17,8 @@ class FileUploadDAO(private val databaseClient: DatabaseClient) : DAO<FileUpload
     }
 
     override fun findById(id: UUID): Mono<FileUpload> {
-        return databaseClient.select()
+        return databaseClient
+            .select()
             .from(FileUpload::class.java)
             .matching(where("id").`is`(id))
             .fetch()
@@ -33,10 +34,12 @@ class FileUploadDAO(private val databaseClient: DatabaseClient) : DAO<FileUpload
     }
 
     private fun update(entity: FileUpload): Mono<FileUpload> {
-        val id = entity.id
-            ?: return IllegalArgumentException("ID cannot be null when updating!").toMono()
+        val id =
+            entity.id
+                ?: return IllegalArgumentException("ID cannot be null when updating!").toMono()
 
-        return databaseClient.update()
+        return databaseClient
+            .update()
             .table(FileUpload::class.java)
             .using(entity)
             .fetch()
@@ -50,7 +53,8 @@ class FileUploadDAO(private val databaseClient: DatabaseClient) : DAO<FileUpload
         if (entity.id != null)
             return IllegalArgumentException("ID must be null when creating!").toMono()
 
-        return databaseClient.insert()
+        return databaseClient
+            .insert()
             .into(FileUpload::class.java)
             .using(entity)
             .map { row -> row.get(0, UUID::class.java) }
@@ -58,8 +62,7 @@ class FileUploadDAO(private val databaseClient: DatabaseClient) : DAO<FileUpload
             .flatMap { uuid ->
                 if (uuid == null)
                     DataRetrievalFailureException("Unable to load file upload by uuid").toMono()
-                else
-                    this.findById(uuid)
+                else this.findById(uuid)
             }
             .doOnSuccess { logger.debug("Successfully saved $entity") }
             .doOnError { t -> logger.error("There was an issue saving $entity -- ${t.message}") }

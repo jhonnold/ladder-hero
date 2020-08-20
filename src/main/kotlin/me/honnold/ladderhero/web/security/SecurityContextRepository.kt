@@ -10,7 +10,8 @@ import org.springframework.web.server.ServerWebExchange
 import reactor.core.publisher.Mono
 
 @Service
-class SecurityContextRepository(private val authManager: AuthManager) : ServerSecurityContextRepository {
+class SecurityContextRepository(private val authManager: AuthManager) :
+    ServerSecurityContextRepository {
     override fun save(exchange: ServerWebExchange, context: SecurityContext): Mono<Void> {
         TODO("Not yet implemented")
     }

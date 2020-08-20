@@ -1,10 +1,10 @@
 package me.honnold.ladderhero.config
 
+import java.util.*
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.server.WebFilter
-import java.util.*
 
 @Configuration
 open class LoggingConfig {
@@ -21,7 +21,8 @@ open class LoggingConfig {
 
             result.doOnTerminate {
                 val time = Date().time - start.time
-                logger.info("${exchange.response.rawStatusCode} ${request.method} ${request.path.pathWithinApplication()} [${request.queryParams}] ${time}ms")
+                logger.info(
+                    "${exchange.response.rawStatusCode} ${request.method} ${request.path.pathWithinApplication()} [${request.queryParams}] ${time}ms")
             }
         }
     }

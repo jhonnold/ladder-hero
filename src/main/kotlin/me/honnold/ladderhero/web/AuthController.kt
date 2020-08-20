@@ -23,39 +23,42 @@ class AuthController(private val authService: AuthService) {
 
     @PostMapping(path = ["/register"])
     fun register(@RequestBody body: AuthRequest): Mono<ResponseEntity<Any>> {
-        return this.authService.registerUser(body)
+        return this.authService
+            .registerUser(body)
             .map { token -> ResponseEntity.ok<Any>(token) }
             .doOnSuccess { logger.info("Successfully registered new user ${body.username}!") }
             .doOnError { t -> logger.error(t.message) }
             .onErrorResume { t ->
                 Mono.just<ResponseEntity<Any>>(
                     when (t) {
-                        is UsernameAlreadyTakenException -> ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
-                            .body<Any>(t.message)
-                        else -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .body<Any>("An unknown error occurred!")
-                    }
-                )
+                        is UsernameAlreadyTakenException ->
+                            ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                                .body<Any>(t.message)
+                        else ->
+                            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                .body<Any>("An unknown error occurred!")
+                    })
             }
     }
 
     @PostMapping(path = ["/login"])
     fun login(@RequestBody body: AuthRequest): Mono<ResponseEntity<Any>> {
-        return this.authService.login(body)
+        return this.authService
+            .login(body)
             .map { token -> ResponseEntity.ok<Any>(token) }
             .doOnSuccess { logger.info("Successful login for ${body.username}") }
             .doOnError { t -> logger.error(t.message) }
             .onErrorResume { t ->
                 Mono.just<ResponseEntity<Any>>(
                     when (t) {
-                        is UsernameNotFoundException -> ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                            .body<Any>(t.message)
-                        is BadCredentialsException -> ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                            .body<Any>(t.message)
-                        else -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .body<Any>("An unknown error occurred!")
-                    }
-                )
+                        is UsernameNotFoundException ->
+                            ResponseEntity.status(HttpStatus.UNAUTHORIZED).body<Any>(t.message)
+                        is BadCredentialsException ->
+                            ResponseEntity.status(HttpStatus.UNAUTHORIZED).body<Any>(t.message)
+                        else ->
+                            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                .body<Any>("An unknown error occurred!")
+                    })
             }
     }
 }

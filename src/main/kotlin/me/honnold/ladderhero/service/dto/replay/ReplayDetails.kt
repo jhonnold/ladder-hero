@@ -1,9 +1,9 @@
 package me.honnold.ladderhero.service.dto.replay
 
-import org.json.simple.JSONObject
 import java.time.LocalDateTime
 import java.util.*
 import kotlin.collections.ArrayList
+import org.json.simple.JSONObject
 
 data class ReplayDetails(
     var replayId: UUID?,
@@ -43,7 +43,6 @@ data class ReplayDetails(
             val activeWorkers: Long = 0,
             val armyValueMinerals: Long = 0,
             val armyValueVespene: Long = 0,
-            val activeUnits: JSONObject? = null
-        )
+            val activeUnits: JSONObject? = null)
     }
 }

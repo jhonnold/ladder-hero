@@ -1,14 +1,5 @@
 package me.honnold.s2protocol
 
-import me.honnold.s2protocol.decoder.BitDecoder
-import me.honnold.s2protocol.decoder.Decoder
-import me.honnold.s2protocol.decoder.VersionedBitDecoder
-import me.honnold.s2protocol.model.data.Struct
-import me.honnold.s2protocol.model.event.Attribute
-import me.honnold.s2protocol.model.event.AttributeEvents
-import me.honnold.s2protocol.model.event.Event
-import me.honnold.s2protocol.model.type.TypeInfo
-import me.honnold.s2protocol.util.BitBuffer
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.nio.ByteBuffer
@@ -18,6 +9,15 @@ import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.collections.set
+import me.honnold.s2protocol.decoder.BitDecoder
+import me.honnold.s2protocol.decoder.Decoder
+import me.honnold.s2protocol.decoder.VersionedBitDecoder
+import me.honnold.s2protocol.model.data.Struct
+import me.honnold.s2protocol.model.event.Attribute
+import me.honnold.s2protocol.model.event.AttributeEvents
+import me.honnold.s2protocol.model.event.Event
+import me.honnold.s2protocol.model.type.TypeInfo
+import me.honnold.s2protocol.util.BitBuffer
 
 class Protocol(build: Int) {
     companion object {
@@ -45,8 +45,9 @@ class Protocol(build: Int) {
     var replayInitTypeId = -1
 
     init {
-        val resource = this::class.java.getResource("/data/$build.dat")
-            ?: throw MissingResourceException("No data file for $build", null, null)
+        val resource =
+            this::class.java.getResource("/data/$build.dat")
+                ?: throw MissingResourceException("No data file for $build", null, null)
 
         val reader = BufferedReader(InputStreamReader(resource.openStream()))
 
@@ -111,7 +112,8 @@ class Protocol(build: Int) {
         val decoder = VersionedBitDecoder(this.infos, contents)
         val header = decoder.get(this.replayHeaderTypeId)!!
 
-        if (header !is Struct) throw DataCorruptedException("Header is incorrect class: ${header::class.simpleName}")
+        if (header !is Struct)
+            throw DataCorruptedException("Header is incorrect class: ${header::class.simpleName}")
         return header
     }
 
@@ -119,7 +121,8 @@ class Protocol(build: Int) {
         val decoder = VersionedBitDecoder(this.infos, contents)
         val details = decoder.get(this.gameDetailsTypeId)!!
 
-        if (details !is Struct) throw DataCorruptedException("Details is incorrect class: ${details::class.simpleName}")
+        if (details !is Struct)
+            throw DataCorruptedException("Details is incorrect class: ${details::class.simpleName}")
         return details
     }
 
@@ -127,7 +130,9 @@ class Protocol(build: Int) {
         val decoder = BitDecoder(this.infos, contents)
         val initData = decoder.get(this.replayInitTypeId)!!
 
-        if (initData !is Struct) throw DataCorruptedException("Init dat is incorrect class: ${initData::class.simpleName}")
+        if (initData !is Struct)
+            throw DataCorruptedException(
+                "Init dat is incorrect class: ${initData::class.simpleName}")
         return initData
     }
 
@@ -137,8 +142,7 @@ class Protocol(build: Int) {
 
         val source = buffer.read(8).toInt()
         val mapNamespace = buffer.read(32).toInt()
-        val attributeEvents =
-            AttributeEvents(source, mapNamespace)
+        val attributeEvents = AttributeEvents(source, mapNamespace)
 
         buffer.read(32) // ignored value (length of attributes)
 
@@ -149,13 +153,14 @@ class Protocol(build: Int) {
 
             buffer.align()
             val valueBuffer = buffer.readBytes(4)
-            val value = StandardCharsets.UTF_8.decode(valueBuffer).toString()
-                .replaceFirst("\u0000", "").reversed()
+            val value =
+                StandardCharsets.UTF_8
+                    .decode(valueBuffer)
+                    .toString()
+                    .replaceFirst("\u0000", "")
+                    .reversed()
 
-            attributeEvents.addToScope(
-                scope,
-                Attribute(namespace, id, scope, value)
-            )
+            attributeEvents.addToScope(scope, Attribute(namespace, id, scope, value))
         }
 
         return attributeEvents
@@ -191,18 +196,21 @@ class Protocol(build: Int) {
 
         while (decoder.input.hasRemaining()) {
             val deltaTypeData = decoder.get(this.gameLoopDeltaTypeId)
-            if (deltaTypeData !is Pair<*, *>) throw DataCorruptedException("Invalid game loop delta id: ${this.gameLoopDeltaTypeId} - $deltaTypeData")
+            if (deltaTypeData !is Pair<*, *>)
+                throw DataCorruptedException(
+                    "Invalid game loop delta id: ${this.gameLoopDeltaTypeId} - $deltaTypeData")
 
             val delta = deltaTypeData.second
-            if (delta !is Long) throw DataCorruptedException("Invalid game loop delta value: $delta")
+            if (delta !is Long)
+                throw DataCorruptedException("Invalid game loop delta value: $delta")
             loop += delta
 
             val userId = if (decodeUserId) decoder.get(this.replayUserIdTypeId) as Struct else null
 
             val eventId = decoder.get(eventTypeId)
             if (eventId !is Long) throw DataCorruptedException("Invalid eventId value: $eventId")
-            val eventType = eventTypes[eventId.toInt()]
-                ?: throw Exception("Unable to parse for $eventId")
+            val eventType =
+                eventTypes[eventId.toInt()] ?: throw Exception("Unable to parse for $eventId")
 
             val event = decoder.get(eventType.first)
             if (event !is Struct) throw DataCorruptedException("Invalid event value: $event")
@@ -215,7 +223,9 @@ class Protocol(build: Int) {
     }
 
     private fun readEventLine(line: String): AbstractMap.SimpleEntry<Int, Pair<Int, String>> {
-        val eventMatch = EVENT_REGEX.find(line) ?: throw IllegalArgumentException("Unable to parse event from $line")
+        val eventMatch =
+            EVENT_REGEX.find(line)
+                ?: throw IllegalArgumentException("Unable to parse event from $line")
 
         val key = eventMatch.groups[1]!!.value.toInt()
         val typeId = eventMatch.groups[2]!!.value.toInt()
@@ -226,7 +236,8 @@ class Protocol(build: Int) {
 
     private fun readTypeId(line: String): Int {
         val gameEventTypeIdMatch =
-            TYPE_ID_REGEX.find(line) ?: throw IllegalArgumentException("Unable to parse type id from $line")
+            TYPE_ID_REGEX.find(line)
+                ?: throw IllegalArgumentException("Unable to parse type id from $line")
 
         return gameEventTypeIdMatch.groups[2]!!.value.toInt()
     }

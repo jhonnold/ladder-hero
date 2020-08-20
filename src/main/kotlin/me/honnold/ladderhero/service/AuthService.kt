@@ -26,25 +26,29 @@ class AuthService(
     fun registerUser(body: AuthRequest): Mono<JWTToken> {
         val encodedPassword = passwordEncoder.encode(body.password)
 
-        return this.userService.createUser(body.username, encodedPassword)
+        return this.userService
+            .createUser(body.username, encodedPassword)
             .map { user -> this.jwtService.getJWTToken(user) }
             .onErrorMap { t ->
                 when (t) {
-                    is DataIntegrityViolationException -> UsernameAlreadyTakenException("The username ${body.username} is already in use!")
+                    is DataIntegrityViolationException ->
+                        UsernameAlreadyTakenException(
+                            "The username ${body.username} is already in use!")
                     else -> t
                 }
             }
     }
 
     fun login(body: AuthRequest): Mono<JWTToken> {
-        return this.userService.getUser(body.username)
+        return this.userService
+            .getUser(body.username)
             .flatMap { user ->
-                if (passwordEncoder.matches(body.password, user.encodedPassword))
-                    Mono.just(user)
-                else
-                    BadCredentialsException("Incorrect password for ${body.username}!").toMono()
+                if (passwordEncoder.matches(body.password, user.encodedPassword)) Mono.just(user)
+                else BadCredentialsException("Incorrect password for ${body.username}!").toMono()
             }
             .map { user -> this.jwtService.getJWTToken(user) }
-            .switchIfEmpty(UsernameNotFoundException("User with username ${body.username} does not exist").toMono())
+            .switchIfEmpty(
+                UsernameNotFoundException("User with username ${body.username} does not exist")
+                    .toMono())
     }
 }

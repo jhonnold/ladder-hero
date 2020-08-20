@@ -29,11 +29,12 @@ class BitBuffer(private val buffer: ByteBuffer, private val order: ByteOrder) {
             val copyBits = min(this.nextBits, count - resultBits)
             val copy = this.next and ((1L shl copyBits) - 1)
 
-            result = if (order == ByteOrder.BIG_ENDIAN) {
-                result or (copy shl (count - resultBits - copyBits))
-            } else {
-                result or (copy shl resultBits)
-            }
+            result =
+                if (order == ByteOrder.BIG_ENDIAN) {
+                    result or (copy shl (count - resultBits - copyBits))
+                } else {
+                    result or (copy shl resultBits)
+                }
 
             this.next = this.next shr copyBits
             this.nextBits -= copyBits

@@ -1,8 +1,8 @@
 package me.honnold.ladderhero.util
 
+import java.nio.ByteBuffer
 import org.slf4j.LoggerFactory
 import org.springframework.core.io.buffer.DataBuffer
-import java.nio.ByteBuffer
 
 class BuffersUtil {
     companion object {

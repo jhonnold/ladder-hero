@@ -20,6 +20,5 @@ class UserService(private val userDAO: UserDAO) {
         val user = User(username = username, encodedPassword = encodedPassword)
 
         return this.userDAO.save(user)
-
     }
 }

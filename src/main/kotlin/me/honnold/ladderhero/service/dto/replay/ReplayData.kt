@@ -3,12 +3,12 @@ package me.honnold.ladderhero.service.dto.replay
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.ObjectMapper
+import java.nio.charset.StandardCharsets
+import java.nio.file.Path
 import me.honnold.mpq.Archive
 import me.honnold.s2protocol.Protocol
 import me.honnold.s2protocol.model.data.Struct
 import me.honnold.s2protocol.model.event.Event
-import java.nio.charset.StandardCharsets
-import java.nio.file.Path
 
 class ReplayData(path: Path) {
     companion object {
@@ -30,7 +30,8 @@ class ReplayData(path: Path) {
     init {
         val archive = Archive(path)
         val userDataContents =
-            archive.userData?.content ?: throw IllegalArgumentException("Path $path is not a Starcraft II Replay!")
+            archive.userData?.content
+                ?: throw IllegalArgumentException("Path $path is not a Starcraft II Replay!")
 
         val defaultProtocol = Protocol(Protocol.DEFAULT)
         val header = defaultProtocol.decodeHeader(userDataContents)
@@ -44,8 +45,10 @@ class ReplayData(path: Path) {
 
         this.initData = this.protocol.decodeInitData(archive.getFileContents(INIT_DATA_FILE_NAME))
         this.details = this.protocol.decodeDetails(archive.getFileContents(DETAILS_FILE_NAME))
-        this.trackerEvents = this.protocol.decodeTrackerEvents(archive.getFileContents(TRACKER_EVENTS_FILE_NAME))
-        this.gameEvents = this.protocol.decodeGameEvents(archive.getFileContents(GAME_EVENTS_FILE_NAME))
+        this.trackerEvents =
+            this.protocol.decodeTrackerEvents(archive.getFileContents(TRACKER_EVENTS_FILE_NAME))
+        this.gameEvents =
+            this.protocol.decodeGameEvents(archive.getFileContents(GAME_EVENTS_FILE_NAME))
 
         archive.close()
     }

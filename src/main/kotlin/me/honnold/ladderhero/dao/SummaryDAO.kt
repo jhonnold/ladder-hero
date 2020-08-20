@@ -1,5 +1,6 @@
 package me.honnold.ladderhero.dao
 
+import java.util.*
 import me.honnold.ladderhero.dao.domain.Summary
 import org.slf4j.LoggerFactory
 import org.springframework.dao.DataRetrievalFailureException
@@ -8,7 +9,6 @@ import org.springframework.data.relational.core.query.Criteria
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toMono
-import java.util.*
 
 @Service
 class SummaryDAO(private val databaseClient: DatabaseClient) : DAO<Summary, UUID> {
@@ -17,7 +17,8 @@ class SummaryDAO(private val databaseClient: DatabaseClient) : DAO<Summary, UUID
     }
 
     override fun findById(id: UUID): Mono<Summary> {
-        return databaseClient.select()
+        return databaseClient
+            .select()
             .from(Summary::class.java)
             .matching(Criteria.where("id").`is`(id))
             .fetch()
@@ -33,10 +34,12 @@ class SummaryDAO(private val databaseClient: DatabaseClient) : DAO<Summary, UUID
     }
 
     private fun update(entity: Summary): Mono<Summary> {
-        val id = entity.id
-            ?: return IllegalArgumentException("ID cannot be null when updating!").toMono()
+        val id =
+            entity.id
+                ?: return IllegalArgumentException("ID cannot be null when updating!").toMono()
 
-        return databaseClient.update()
+        return databaseClient
+            .update()
             .table(Summary::class.java)
             .using(entity)
             .fetch()
@@ -50,16 +53,15 @@ class SummaryDAO(private val databaseClient: DatabaseClient) : DAO<Summary, UUID
         if (entity.id != null)
             return IllegalArgumentException("ID must be null when creating!").toMono()
 
-        return databaseClient.insert()
+        return databaseClient
+            .insert()
             .into(Summary::class.java)
             .using(entity)
             .map { row -> row.get(0, UUID::class.java) }
             .first()
             .flatMap { uuid ->
-                if (uuid == null)
-                    DataRetrievalFailureException("Unable to save Summary!").toMono()
-                else
-                    this.findById(uuid)
+                if (uuid == null) DataRetrievalFailureException("Unable to save Summary!").toMono()
+                else this.findById(uuid)
             }
             .doOnSuccess { logger.debug("Successfully saved $entity") }
             .doOnError { t -> logger.error("There was an issue saving $entity -- ${t.message}") }

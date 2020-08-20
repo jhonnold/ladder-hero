@@ -17,8 +17,8 @@ open class FlywayConfig {
         val flywayProperties = getFlywayProperties()
 
         return Flyway(
-            Flyway.configure().baselineOnMigrate(true)
-                .dataSource(flywayProperties.url, flywayProperties.user, flywayProperties.password)
-        )
+            Flyway.configure()
+                .baselineOnMigrate(true)
+                .dataSource(flywayProperties.url, flywayProperties.user, flywayProperties.password))
     }
 }

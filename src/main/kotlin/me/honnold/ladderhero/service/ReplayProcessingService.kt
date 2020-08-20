@@ -21,33 +21,36 @@ class ReplayProcessingService(
     }
 
     fun processUploadAsReplay(uploadResult: UploadResult) {
-        this.s3ClientService.download(uploadResult.fileKey)
+        this.s3ClientService
+            .download(uploadResult.fileKey)
             .map { path -> ReplayData(path) }
             .flatMap { data ->
-                this.replayService.buildAndSaveReplay(data)
-                    .map { replay -> Tuples.of(data, replay) }
+                this.replayService.buildAndSaveReplay(data).map { replay ->
+                    Tuples.of(data, replay)
+                }
             }
             .flatMapMany { sequenceData ->
                 val data = sequenceData.t1
                 val replay = sequenceData.t2
 
-                this.playerService.buildAndSavePlayers(data)
-                    .map { playerData -> Tuples.of(data, replay, playerData) }
+                this.playerService.buildAndSavePlayers(data).map { playerData ->
+                    Tuples.of(data, replay, playerData)
+                }
             }
             .flatMap { sequenceData ->
                 val data = sequenceData.t1
                 val replay = sequenceData.t2
                 val playerData = sequenceData.t3
 
-                this.summaryService.buildAndSaveSummary(data, replay, playerData)
-                    .map { summary -> Tuples.of(data, replay, playerData, summary) }
+                this.summaryService.buildAndSaveSummary(data, replay, playerData).map { summary ->
+                    Tuples.of(data, replay, playerData, summary)
+                }
             }
             .flatMap { sequenceData ->
                 val data = sequenceData.t1
                 val summary = sequenceData.t4
 
-                this.summaryService.populateSummary(summary, data)
-                    .map { sequenceData }
+                this.summaryService.populateSummary(summary, data).map { sequenceData }
             }
             .doOnComplete { logger.info("Finished processing $uploadResult") }
             .doOnError { t -> logger.error("Unable to process $uploadResult -- ${t.message}") }

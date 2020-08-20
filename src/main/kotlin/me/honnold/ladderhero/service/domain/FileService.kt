@@ -16,8 +16,6 @@ class FileService(private val fileUploadDAO: FileUploadDAO) {
     fun saveUploadResult(result: UploadResult): Mono<UploadResult> {
         val fileUpload = FileUpload(key = result.fileKey, fileName = result.fileName)
 
-        return this.fileUploadDAO.save(fileUpload)
-            .onErrorResume { Mono.empty() }
-            .map { result }
+        return this.fileUploadDAO.save(fileUpload).onErrorResume { Mono.empty() }.map { result }
     }
 }

@@ -1,10 +1,10 @@
 package me.honnold.ladderhero.util
 
-import me.honnold.s2protocol.model.data.Struct
-import me.honnold.s2protocol.model.event.Event
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import kotlin.math.floor
+import me.honnold.s2protocol.model.data.Struct
+import me.honnold.s2protocol.model.event.Event
 
 fun windowsTimeToDate(time: Long): LocalDateTime {
     val epoch = time / 10_000_000 - 11_644_473_600
@@ -17,6 +17,5 @@ fun gameDuration(events: List<Event>): Long {
 
     return if (firstLeaveEvent == null) 0 else floor(firstLeaveEvent.loop / 22.4).toLong()
 }
-
 
 fun Struct.getLong(key: String): Long = this[key]

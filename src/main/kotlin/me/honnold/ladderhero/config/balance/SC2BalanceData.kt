@@ -9,19 +9,24 @@ class SC2BalanceData(data: JSONObject) {
 
     init {
         val localeArray = data["locale"] as JSONArray
-        this.locale = localeArray.map { localeAny ->
-            val localeObj = localeAny as JSONObject
+        this.locale =
+            localeArray
+                .map { localeAny ->
+                    val localeObj = localeAny as JSONObject
 
-            localeObj["id"] as Long to (localeObj["text"] as String?).toString()
-        }.toMap()
-
+                    localeObj["id"] as Long to (localeObj["text"] as String?).toString()
+                }
+                .toMap()
 
         val unitsArray = data["units"] as JSONArray
-        this.units = unitsArray.map { unitAny ->
-            val unitObj = unitAny as JSONObject
+        this.units =
+            unitsArray
+                .map { unitAny ->
+                    val unitObj = unitAny as JSONObject
 
-            unitObj["id"] as String to SC2Unit(unitObj, this.locale)
-        }.toMap()
+                    unitObj["id"] as String to SC2Unit(unitObj, this.locale)
+                }
+                .toMap()
     }
 
     class SC2Unit(unitData: JSONObject, locale: Map<Long, String>) {
