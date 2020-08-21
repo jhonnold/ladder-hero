@@ -19,7 +19,7 @@ auth:
     secret: ${JWT_SECRET}
     expiration-duration: 1800000
   blizzard:
-    redirect: http://localhost:8080/blizzard/code
+    redirect: https://ladder-hero-api.honnold.me/blizzard/code
     clientId: ${BLIZZARD_CLIENT_ID}
 
 aws:

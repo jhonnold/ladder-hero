@@ -1,0 +1,1 @@
+ALTER TABLE public.users ADD code varchar(64) NULL;

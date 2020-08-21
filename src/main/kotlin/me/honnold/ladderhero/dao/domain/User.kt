@@ -17,4 +17,6 @@ data class User(
     @Column("profile_id")
     var profileId: Int = -1,
     @Column("is_admin")
-    var isAdmin: Boolean = false)
+    var isAdmin: Boolean = false,
+    @Column("code")
+    var code: String? = null)
