@@ -1,12 +1,12 @@
 package me.honnold.ladderhero.config.balance
 
-import java.io.InputStreamReader
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream
 import org.json.simple.JSONObject
 import org.json.simple.parser.JSONParser
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import java.io.InputStreamReader
 
 @Configuration
 open class BalanceDataConfig {
@@ -26,7 +26,8 @@ open class BalanceDataConfig {
 
             val data = SC2BalanceData(json)
             logger.info(
-                "Loaded Starcraft II Balance Data - ${data.locale.size} Locales and ${data.units.size} Units")
+                "Loaded Starcraft II Balance Data - ${data.locale.size} Locales and ${data.units.size} Units"
+            )
 
             data
         }

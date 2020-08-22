@@ -19,6 +19,7 @@ open class FlywayConfig {
         return Flyway(
             Flyway.configure()
                 .baselineOnMigrate(true)
-                .dataSource(flywayProperties.url, flywayProperties.user, flywayProperties.password))
+                .dataSource(flywayProperties.url, flywayProperties.user, flywayProperties.password)
+        )
     }
 }

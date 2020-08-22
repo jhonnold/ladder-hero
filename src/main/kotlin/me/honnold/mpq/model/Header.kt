@@ -12,4 +12,5 @@ class Header(
     val hashTableOffset: Int,
     val blockTableOffset: Int,
     val hashTableEntries: Int,
-    val blockTableEntries: Int)
+    val blockTableEntries: Int
+)

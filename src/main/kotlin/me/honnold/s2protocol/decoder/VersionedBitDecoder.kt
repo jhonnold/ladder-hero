@@ -1,14 +1,16 @@
 package me.honnold.s2protocol.decoder
 
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import me.honnold.s2protocol.model.data.BitArray
 import me.honnold.s2protocol.model.data.Blob
 import me.honnold.s2protocol.model.data.Struct
 import me.honnold.s2protocol.model.type.*
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 class VersionedBitDecoder(
-    infos: List<TypeInfo>, buffer: ByteBuffer, order: ByteOrder = ByteOrder.BIG_ENDIAN
+    infos: List<TypeInfo>,
+    buffer: ByteBuffer,
+    order: ByteOrder = ByteOrder.BIG_ENDIAN
 ) : Decoder(infos, buffer, order) {
     private fun getVNumber(): Long {
         var value = 0L
@@ -82,7 +84,8 @@ class VersionedBitDecoder(
         val length = this.getVNumber()
 
         return (0 until length).map {
-            when (val info = this.infos[id]
+            when (
+                val info = this.infos[id]
             ) {
                 is ArrayTypeInfo -> getArray(info.p, info.q)
                 is BitArrayTypeInfo -> getBitArray(info.p)

@@ -18,9 +18,11 @@ auth:
   jwt:
     secret: ${JWT_SECRET}
     expiration-duration: 1800000
-  blizzard:
-    redirect: http://localhost:8080/blizzard/code
-    clientId: ${BLIZZARD_CLIENT_ID}
+
+blizzard:
+  redirect: http://localhost:8080/blizzard/code
+  clientId: ${BLIZZARD_CLIENT_ID}
+  clientSecret: ${BLIZZARD_CLIENT_SECRET}
 
 aws:
   s3:

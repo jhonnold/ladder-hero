@@ -1,9 +1,9 @@
 package me.honnold.ladderhero.config
 
-import java.net.URI
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import java.net.URI
 
 @Configuration
 open class AppConfig {

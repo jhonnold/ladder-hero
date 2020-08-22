@@ -37,7 +37,8 @@ class AuthController(private val authService: AuthService) {
                         else ->
                             ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                                 .body<Any>("An unknown error occurred!")
-                    })
+                    }
+                )
             }
     }
 
@@ -58,7 +59,8 @@ class AuthController(private val authService: AuthService) {
                         else ->
                             ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                                 .body<Any>("An unknown error occurred!")
-                    })
+                    }
+                )
             }
     }
 }

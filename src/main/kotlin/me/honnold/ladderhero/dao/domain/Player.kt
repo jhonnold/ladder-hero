@@ -1,8 +1,8 @@
 package me.honnold.ladderhero.dao.domain
 
-import java.util.*
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Column
+import java.util.*
 
 data class Player(
     @Id
@@ -13,4 +13,5 @@ data class Player(
     @Column("region_id")
     var regionId: Long,
     @Column("realm_id")
-    var realmId: Long)
+    var realmId: Long
+)

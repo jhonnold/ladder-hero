@@ -3,12 +3,12 @@ package me.honnold.ladderhero.service
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
-import java.security.Key
-import java.util.*
-import javax.annotation.PostConstruct
 import me.honnold.ladderhero.dao.domain.User
 import me.honnold.ladderhero.service.dto.JWTToken
 import org.springframework.stereotype.Service
+import java.security.Key
+import java.util.*
+import javax.annotation.PostConstruct
 
 @Service
 class JWTService(private val jwtSecret: String, private val jwtExpiration: Long) {

@@ -1,6 +1,5 @@
 package me.honnold.ladderhero.dao
 
-import java.util.*
 import me.honnold.ladderhero.dao.domain.Replay
 import me.honnold.ladderhero.dao.value.ReplayDetailRow
 import me.honnold.ladderhero.dao.value.ReplaySummaryRow
@@ -13,6 +12,7 @@ import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toMono
+import java.util.*
 
 @Service
 class ReplayDAO(private val databaseClient: DatabaseClient) : DAO<Replay, UUID> {

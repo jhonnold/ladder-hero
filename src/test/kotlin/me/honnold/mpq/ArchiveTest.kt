@@ -1,14 +1,14 @@
 package me.honnold.mpq
 
-import java.nio.ByteBuffer
-import java.nio.file.Paths
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import me.honnold.mpq.model.BlockEntry
 import me.honnold.mpq.model.HashEntry
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.contains
 import org.junit.Test
+import java.nio.ByteBuffer
+import java.nio.file.Paths
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 
 class ArchiveTest {
     @Test(expected = InvalidArchiveException::class)
@@ -30,7 +30,8 @@ class ArchiveTest {
             assertNotNull(userData)
             assertEquals(
                 ByteBuffer.wrap(byteArrayOf('M'.toByte(), 'P'.toByte(), 'Q'.toByte(), 0x1B)),
-                userData.magic)
+                userData.magic
+            )
             assertEquals(512, userData.userDataSize)
             assertEquals(1024, userData.headerOffset)
             assertEquals(115, userData.userDataHeaderSize)
@@ -48,7 +49,8 @@ class ArchiveTest {
 
             assertEquals(
                 ByteBuffer.wrap(byteArrayOf('M'.toByte(), 'P'.toByte(), 'Q'.toByte(), 0x1A)),
-                header.magic)
+                header.magic
+            )
             assertEquals(208, header.headerSize)
             assertEquals(68730, header.archiveSize)
             assertEquals(3, header.formatVersion)
@@ -136,7 +138,9 @@ class ArchiveTest {
                     "replay.smartcam.events",
                     "replay.sync.events",
                     "replay.sync.history",
-                    "replay.tracker.events"))
+                    "replay.tracker.events"
+                )
+            )
         }
     }
 

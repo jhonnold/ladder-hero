@@ -1,10 +1,10 @@
 package me.honnold.ladderhero.dao.domain
 
 import io.r2dbc.postgresql.codec.Json
-import java.util.*
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
+import java.util.*
 
 @Table("summary_snapshot")
 data class SummarySnapshot(
@@ -36,4 +36,5 @@ data class SummarySnapshot(
 
     // JSONB in database, using Strings to avoid memory leaks
     @Column("active_units")
-    var activeUnits: Json? = null)
+    var activeUnits: Json? = null
+)

@@ -1,7 +1,6 @@
 package me.honnold.ladderhero.service.domain
 
 import io.r2dbc.postgresql.codec.Json
-import kotlin.math.max
 import me.honnold.ladderhero.dao.SummaryDAO
 import me.honnold.ladderhero.dao.SummarySnapshotDAO
 import me.honnold.ladderhero.dao.domain.Player
@@ -22,10 +21,12 @@ import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toMono
 import reactor.util.function.Tuples
+import kotlin.math.max
 
 @Service
 class SummaryService(
-    private val summaryDAO: SummaryDAO, private val summarySnapshotDAO: SummarySnapshotDAO
+    private val summaryDAO: SummaryDAO,
+    private val summarySnapshotDAO: SummarySnapshotDAO
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(SummaryService::class.java)
@@ -35,7 +36,8 @@ class SummaryService(
         val playerSummary = ReplayUtil.findPlayerInReplayDetails(player.profileId, data.details)
         if (playerSummary == null) {
             logger.warn(
-                "Unable to locate ${player.profileId} in ${replay.slug}! No summary will be generated")
+                "Unable to locate ${player.profileId} in ${replay.slug}! No summary will be generated"
+            )
             return Mono.empty()
         }
 
@@ -67,7 +69,8 @@ class SummaryService(
         val summaryStateEvents =
             data.trackerEvents.filter { event ->
                 if (event.name != "NNet.Replay.Tracker.SPlayerStatsEvent" ||
-                    event.loop > firstLeaveGameEvent.loop)
+                    event.loop > firstLeaveGameEvent.loop
+                )
                     false
                 else {
                     val playerId: Long = event.data["m_playerId"]
@@ -82,7 +85,8 @@ class SummaryService(
                 if (event.name == "NNet.Replay.Tracker.SUnitDiedEvent") return@filter true
 
                 if (event.name == "NNet.Replay.Tracker.SUnitBornEvent" ||
-                    event.name == "NNet.Replay.Tracker.SUnitInitEvent") {
+                    event.name == "NNet.Replay.Tracker.SUnitInitEvent"
+                ) {
                     val playerId: Long = event.data["m_controlPlayerId"]
 
                     playerId == summary.workingId
@@ -92,7 +96,8 @@ class SummaryService(
             }
 
         logger.debug(
-            "Found ${summaryStateEvents.size} stat events for ${summary.name} (${summary.workingId}) on ${summary.id}")
+            "Found ${summaryStateEvents.size} stat events for ${summary.name} (${summary.workingId}) on ${summary.id}"
+        )
 
         val unitMap = mutableMapOf<Long, String>()
         val unitEventIterator = unitEvents.listIterator()
@@ -109,7 +114,8 @@ class SummaryService(
                         }
 
                         if (unitEvent.name == "NNet.Replay.Tracker.SUnitBornEvent" ||
-                            unitEvent.name == "NNet.Replay.Tracker.SUnitInitEvent") {
+                            unitEvent.name == "NNet.Replay.Tracker.SUnitInitEvent"
+                        ) {
                             val unitTagIndex: Long = unitEvent.data["m_unitTagIndex"]
                             val unitTagRecycle: Long = unitEvent.data["m_unitTagRecycle"]
                             val unitTypeName: Blob = unitEvent.data["m_unitTypeName"]
@@ -161,7 +167,8 @@ class SummaryService(
                         activeWorkers,
                         armyValueMinerals,
                         armyValueVespene,
-                        Json.of(JSONObject.toJSONString(activeUnits)))
+                        Json.of(JSONObject.toJSONString(activeUnits))
+                    )
                 }
                 .toMono()
                 .flatMap { this.summarySnapshotDAO.saveAll(it) }

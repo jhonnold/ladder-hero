@@ -1,14 +1,5 @@
 package me.honnold.s2protocol
 
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.nio.charset.StandardCharsets
-import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
-import kotlin.collections.set
 import me.honnold.s2protocol.decoder.BitDecoder
 import me.honnold.s2protocol.decoder.Decoder
 import me.honnold.s2protocol.decoder.VersionedBitDecoder
@@ -18,6 +9,15 @@ import me.honnold.s2protocol.model.event.AttributeEvents
 import me.honnold.s2protocol.model.event.Event
 import me.honnold.s2protocol.model.type.TypeInfo
 import me.honnold.s2protocol.util.BitBuffer
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.charset.StandardCharsets
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
+import kotlin.collections.set
 
 class Protocol(build: Int) {
     companion object {
@@ -132,7 +132,8 @@ class Protocol(build: Int) {
 
         if (initData !is Struct)
             throw DataCorruptedException(
-                "Init dat is incorrect class: ${initData::class.simpleName}")
+                "Init dat is incorrect class: ${initData::class.simpleName}"
+            )
         return initData
     }
 
@@ -198,7 +199,8 @@ class Protocol(build: Int) {
             val deltaTypeData = decoder.get(this.gameLoopDeltaTypeId)
             if (deltaTypeData !is Pair<*, *>)
                 throw DataCorruptedException(
-                    "Invalid game loop delta id: ${this.gameLoopDeltaTypeId} - $deltaTypeData")
+                    "Invalid game loop delta id: ${this.gameLoopDeltaTypeId} - $deltaTypeData"
+                )
 
             val delta = deltaTypeData.second
             if (delta !is Long)

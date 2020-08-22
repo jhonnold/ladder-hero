@@ -3,12 +3,12 @@ package me.honnold.ladderhero.service.dto.replay
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.ObjectMapper
-import java.nio.charset.StandardCharsets
-import java.nio.file.Path
 import me.honnold.mpq.Archive
 import me.honnold.s2protocol.Protocol
 import me.honnold.s2protocol.model.data.Struct
 import me.honnold.s2protocol.model.event.Event
+import java.nio.charset.StandardCharsets
+import java.nio.file.Path
 
 class ReplayData(path: Path) {
     companion object {

@@ -1,5 +1,9 @@
 package me.honnold.mpq
 
+import me.honnold.mpq.model.*
+import me.honnold.mpq.util.ByteBufferInputStream
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream
+import org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStream
 import java.io.FileInputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -8,10 +12,6 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.util.*
 import kotlin.math.ceil
-import me.honnold.mpq.model.*
-import me.honnold.mpq.util.ByteBufferInputStream
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream
-import org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStream
 
 class Archive(path: Path) : AutoCloseable {
     companion object {
@@ -109,7 +109,8 @@ class Archive(path: Path) : AutoCloseable {
     private fun decompress(buffer: ByteBuffer, size: Int): ByteBuffer {
         val dest = ByteArray(size)
 
-        when (val compressionType = buffer.get()
+        when (
+            val compressionType = buffer.get()
         ) {
             0x02.toByte() ->
                 DeflateCompressorInputStream(ByteBufferInputStream(buffer)).use { it.read(dest) }
@@ -134,7 +135,8 @@ class Archive(path: Path) : AutoCloseable {
         val content = this.readFromChannel(16, userDataHeaderSize)
 
         return UserData(
-            ByteBuffer.wrap(magic), userDataSize, headerOffset, userDataHeaderSize, content)
+            ByteBuffer.wrap(magic), userDataSize, headerOffset, userDataHeaderSize, content
+        )
     }
 
     private fun readHeader(): Header {
@@ -163,7 +165,8 @@ class Archive(path: Path) : AutoCloseable {
             hashTableOffset,
             blockTableOffset,
             hashTableEntries,
-            blockTableEntries)
+            blockTableEntries
+        )
     }
 
     private fun readHashTable(): List<HashEntry> {
@@ -232,7 +235,8 @@ class Archive(path: Path) : AutoCloseable {
 
         val fileData =
             this.readFromChannel(
-                (this.header.offset + blockEntry.offset).toLong(), blockEntry.archivedSize)
+                (this.header.offset + blockEntry.offset).toLong(), blockEntry.archivedSize
+            )
 
         if (blockEntry.flags and 0x0100_0000 != 0) {
             if (blockEntry.flags and 0x0000_0200 != 0 && blockEntry.size > blockEntry.archivedSize)
@@ -262,7 +266,8 @@ class Archive(path: Path) : AutoCloseable {
                 val sectorBuffer = ByteBuffer.wrap(sector)
                 if (blockEntry.flags and 0x0000_0200 != 0) {
                     result.put(
-                        this.decompress(sectorBuffer, sectorSize.coerceAtMost(result.remaining())))
+                        this.decompress(sectorBuffer, sectorSize.coerceAtMost(result.remaining()))
+                    )
                 } else result.put(sectorBuffer)
             }
 

@@ -1,13 +1,13 @@
 package me.honnold.s2protocol
 
+import me.honnold.mpq.Archive
+import me.honnold.s2protocol.model.data.Blob
+import me.honnold.s2protocol.model.data.Struct
 import java.nio.file.Paths
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import me.honnold.mpq.Archive
-import me.honnold.s2protocol.model.data.Blob
-import me.honnold.s2protocol.model.data.Struct
 
 class ProtocolTest {
     @Test

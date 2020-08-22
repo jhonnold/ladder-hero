@@ -1,8 +1,8 @@
 package me.honnold.ladderhero.dao.domain
 
-import java.util.*
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Column
+import java.util.*
 
 data class Summary(
     @Id
@@ -37,4 +37,5 @@ data class Summary(
     @Column("avg_collection_rate_minerals")
     var avgCollectionRateMinerals: Long = 0,
     @Column("avg_collection_rate_vespene")
-    var avgCollectionRateVespene: Long = 0)
+    var avgCollectionRateVespene: Long = 0
+)

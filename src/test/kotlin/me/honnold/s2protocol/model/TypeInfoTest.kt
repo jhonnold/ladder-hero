@@ -1,9 +1,9 @@
 package me.honnold.s2protocol.model
 
+import me.honnold.s2protocol.model.type.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import me.honnold.s2protocol.model.type.*
 
 class TypeInfoTest {
     @Test
@@ -32,7 +32,8 @@ class TypeInfoTest {
                 Field("m_minor", 8, 2),
                 Field("m_revision", 8, 3),
                 Field("m_build", 5, 4),
-                Field("m_baseBuild", 5, 5))
+                Field("m_baseBuild", 5, 5)
+            )
 
         assertEquals(TypeMethod.STRUCT, info.method)
         assertEquals(expectedFields, info.p)
@@ -52,7 +53,8 @@ class TypeInfoTest {
                 Field("m_uint6", 2),
                 Field("m_uint14", 3),
                 Field("m_uint22", 4),
-                Field("m_uint32", 5))
+                Field("m_uint32", 5)
+            )
 
         assertEquals(TypeMethod.CHOICE, info.method)
         assertEquals(expectedBounds, info.p)

@@ -15,7 +15,8 @@ abstract class TypeInfo(open val method: TypeMethod) {
             val methodMatch =
                 METHOD_REGEX.find(src)
                     ?: throw IllegalArgumentException(
-                        "$src is not an understood input for TypeInfo")
+                        "$src is not an understood input for TypeInfo"
+                    )
 
             val methodGroup = methodMatch.groups[1]
             return when (methodGroup!!.value) {
@@ -23,7 +24,8 @@ abstract class TypeInfo(open val method: TypeMethod) {
                     val boundsMatch =
                         BOUNDS_REGEX.find(src, methodGroup.range.last)
                             ?: throw IllegalArgumentException(
-                                "Unable to parse bounds for _int from $src")
+                                "Unable to parse bounds for _int from $src"
+                            )
 
                     val offset = boundsMatch.groups[1]!!.value.toLong()
                     val bits = boundsMatch.groups[2]!!.value.toInt()
@@ -38,7 +40,8 @@ abstract class TypeInfo(open val method: TypeMethod) {
                                 Field(
                                     it.groups[1]!!.value,
                                     it.groups[2]!!.value.toInt(),
-                                    it.groups[3]!!.value.toInt())
+                                    it.groups[3]!!.value.toInt()
+                                )
                             }
                             .toList()
 
@@ -48,7 +51,8 @@ abstract class TypeInfo(open val method: TypeMethod) {
                     val boundsMatch =
                         BOUNDS_REGEX.find(src, methodGroup.range.last)
                             ?: throw IllegalArgumentException(
-                                "Unable to parse bounds for _choice from $src")
+                                "Unable to parse bounds for _choice from $src"
+                            )
 
                     val offset = boundsMatch.groups[1]!!.value.toLong()
                     val bits = boundsMatch.groups[2]!!.value.toInt()
@@ -66,7 +70,8 @@ abstract class TypeInfo(open val method: TypeMethod) {
                     val boundsMatch =
                         BOUNDS_REGEX.find(src, methodGroup.range.last)
                             ?: throw IllegalArgumentException(
-                                "Unable to parse bounds for _array from $src")
+                                "Unable to parse bounds for _array from $src"
+                            )
 
                     val offset = boundsMatch.groups[1]!!.value.toLong()
                     val bits = boundsMatch.groups[2]!!.value.toInt()
@@ -75,7 +80,8 @@ abstract class TypeInfo(open val method: TypeMethod) {
                     val typeMatch =
                         Regex("(\\d+)").find(src, boundsMatch.range.last)
                             ?: throw IllegalArgumentException(
-                                "Unable to parse type for _array from $src")
+                                "Unable to parse type for _array from $src"
+                            )
                     val type = typeMatch.groups[1]!!.value.toInt()
 
                     return ArrayTypeInfo(bounds, type)
@@ -84,7 +90,8 @@ abstract class TypeInfo(open val method: TypeMethod) {
                     val boundsMatch =
                         BOUNDS_REGEX.find(src, methodGroup.range.last)
                             ?: throw IllegalArgumentException(
-                                "Unable to parse bounds for _bitarray from $src")
+                                "Unable to parse bounds for _bitarray from $src"
+                            )
 
                     val offset = boundsMatch.groups[1]!!.value.toLong()
                     val bits = boundsMatch.groups[2]!!.value.toInt()
@@ -95,7 +102,8 @@ abstract class TypeInfo(open val method: TypeMethod) {
                     val boundsMatch =
                         BOUNDS_REGEX.find(src, methodGroup.range.last)
                             ?: throw IllegalArgumentException(
-                                "Unable to parse bounds for _blob from $src")
+                                "Unable to parse bounds for _blob from $src"
+                            )
 
                     val offset = boundsMatch.groups[1]!!.value.toLong()
                     val bits = boundsMatch.groups[2]!!.value.toInt()
@@ -106,7 +114,8 @@ abstract class TypeInfo(open val method: TypeMethod) {
                     val optionalMatch =
                         OPTIONAL_REGEX.find(src, methodGroup.range.last)
                             ?: throw java.lang.IllegalArgumentException(
-                                "Unable to parse typeId for _optional from $src")
+                                "Unable to parse typeId for _optional from $src"
+                            )
 
                     val type = optionalMatch.groups[1]!!.value.toInt()
 

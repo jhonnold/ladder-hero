@@ -1,9 +1,9 @@
 package me.honnold.ladderhero.dao.domain
 
-import java.time.LocalDateTime
-import java.util.*
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Column
+import java.time.LocalDateTime
+import java.util.*
 
 data class Replay(
     @Id
@@ -18,4 +18,5 @@ data class Replay(
     @Column("played_at")
     var playedAt: LocalDateTime,
     @Column("slug")
-    var slug: String? = null)
+    var slug: String? = null
+)

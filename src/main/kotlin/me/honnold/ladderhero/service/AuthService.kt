@@ -33,7 +33,8 @@ class AuthService(
                 when (t) {
                     is DataIntegrityViolationException ->
                         UsernameAlreadyTakenException(
-                            "The username ${body.username} is already in use!")
+                            "The username ${body.username} is already in use!"
+                        )
                     else -> t
                 }
             }
@@ -49,6 +50,7 @@ class AuthService(
             .map { user -> this.jwtService.getJWTToken(user) }
             .switchIfEmpty(
                 UsernameNotFoundException("User with username ${body.username} does not exist")
-                    .toMono())
+                    .toMono()
+            )
     }
 }

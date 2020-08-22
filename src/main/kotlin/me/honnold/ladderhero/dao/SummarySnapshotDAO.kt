@@ -1,6 +1,5 @@
 package me.honnold.ladderhero.dao
 
-import java.util.*
 import me.honnold.ladderhero.dao.domain.SummarySnapshot
 import org.slf4j.LoggerFactory
 import org.springframework.dao.DataRetrievalFailureException
@@ -10,6 +9,7 @@ import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toFlux
 import reactor.kotlin.core.publisher.toMono
+import java.util.*
 
 @Service
 class SummarySnapshotDAO(private val databaseClient: DatabaseClient) : DAO<SummarySnapshot, UUID> {
@@ -69,7 +69,8 @@ class SummarySnapshotDAO(private val databaseClient: DatabaseClient) : DAO<Summa
             .doOnSuccess { logger.debug("Successfully saved ${entities.size} SummarySnapshots") }
             .doOnError { t ->
                 logger.error(
-                    "There was an issue saving ${entities.size} SummarySnapshots -- ${t.message}")
+                    "There was an issue saving ${entities.size} SummarySnapshots -- ${t.message}"
+                )
             }
     }
 }

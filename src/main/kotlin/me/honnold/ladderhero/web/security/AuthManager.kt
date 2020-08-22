@@ -14,7 +14,8 @@ class AuthManager(private val jwtService: JWTService) : ReactiveAuthenticationMa
             .map { jwtService.getClaimsFromToken(it) }
             .map { claims ->
                 UsernamePasswordAuthenticationToken(
-                    claims.subject, null, emptyList()) as Authentication
+                    claims.subject, null, emptyList()
+                ) as Authentication
             }
             .onErrorResume { Mono.empty() }
     }

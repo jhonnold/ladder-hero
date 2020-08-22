@@ -1,7 +1,6 @@
 package me.honnold.ladderhero.service.domain
 
 import com.github.slugify.Slugify
-import java.time.ZoneOffset
 import me.honnold.ladderhero.dao.ReplayDAO
 import me.honnold.ladderhero.dao.domain.Replay
 import me.honnold.ladderhero.service.dto.replay.ReplayData
@@ -20,6 +19,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.time.ZoneOffset
 
 @Service
 class ReplayService(private val replayDAO: ReplayDAO) {
@@ -43,7 +43,8 @@ class ReplayService(private val replayDAO: ReplayDAO) {
                             replayRows[0].mapName,
                             replayRows[0].duration,
                             replayRows[0].playedAt,
-                            replayRows[0].replaySlug)
+                            replayRows[0].replaySlug
+                        )
 
                     replaySummary.players.addAll(
                         replayRows.map { player ->
@@ -53,8 +54,10 @@ class ReplayService(private val replayDAO: ReplayDAO) {
                                 player.name,
                                 player.profileId,
                                 player.teamId,
-                                player.didWin)
-                        })
+                                player.didWin
+                            )
+                        }
+                    )
 
                     replaySummary
                 }
@@ -76,7 +79,8 @@ class ReplayService(private val replayDAO: ReplayDAO) {
                     details[0].mapName,
                     details[0].duration,
                     details[0].playedAt,
-                    details[0].replaySlug)
+                    details[0].replaySlug
+                )
 
             replayDetails.players.addAll(
                 details.groupBy { row -> row.playerId }.values.map { playerSnapshots ->
@@ -95,7 +99,8 @@ class ReplayService(private val replayDAO: ReplayDAO) {
                             playerSnapshots[0].avgUnspentMinerals,
                             playerSnapshots[0].avgUnspentVespene,
                             playerSnapshots[0].avgCollectionRateMinerals,
-                            playerSnapshots[0].avgCollectionRateVespene)
+                            playerSnapshots[0].avgCollectionRateVespene
+                        )
 
                     playerDetails.snapshots.addAll(
                         playerSnapshots.map { snapshot ->
@@ -113,11 +118,14 @@ class ReplayService(private val replayDAO: ReplayDAO) {
                                 snapshot.activeWorkers,
                                 snapshot.armyValueMinerals,
                                 snapshot.armyValueVespene,
-                                activeUnits)
-                        })
+                                activeUnits
+                            )
+                        }
+                    )
 
                     playerDetails
-                })
+                }
+            )
 
             Mono.just(replayDetails)
         }

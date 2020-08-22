@@ -2,7 +2,7 @@ plugins {
     id "org.jetbrains.kotlin.jvm" version "1.3.72"
     id "org.springframework.boot" version "2.3.3.RELEASE"
     id "com.jfrog.bintray" version "1.8.5"
-    id "com.diffplug.spotless" version "5.1.1"
+    id "org.jlleitschuh.gradle.ktlint" version "9.3.0"
     id "maven-publish"
 }
 
@@ -52,10 +52,8 @@ compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }
 
-spotless {
-    kotlin {
-        ktfmt('0.18').dropboxStyle()
-    }
+ktlint {
+    disabledRules = ["no-wildcard-imports"]
 }
 
 group "me.honnold"

@@ -1,9 +1,9 @@
 package me.honnold.ladderhero.dao.value
 
 import io.r2dbc.postgresql.codec.Json
+import org.springframework.data.relational.core.mapping.Column
 import java.time.LocalDateTime
 import java.util.*
-import org.springframework.data.relational.core.mapping.Column
 
 /** Class to represent the output of a join query */
 data class ReplayDetailRow(

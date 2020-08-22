@@ -1,9 +1,9 @@
 package me.honnold.ladderhero.dao.domain
 
-import java.util.*
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
+import java.util.*
 
 @Table("users")
 data class User(
@@ -19,4 +19,5 @@ data class User(
     @Column("is_admin")
     var isAdmin: Boolean = false,
     @Column("code")
-    var code: String? = null)
+    var code: String? = null
+)

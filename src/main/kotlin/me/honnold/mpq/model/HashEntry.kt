@@ -13,6 +13,7 @@ class HashEntry(
 
     override fun toString(): String {
         return "%08x %08x %04x %04x %08x".format(
-            fileHashA, fileHashB, language, platform, fileBlock)
+            fileHashA, fileHashB, language, platform, fileBlock
+        )
     }
 }

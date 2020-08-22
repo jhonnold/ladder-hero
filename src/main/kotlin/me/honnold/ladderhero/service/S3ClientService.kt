@@ -1,11 +1,5 @@
 package me.honnold.ladderhero.service
 
-import java.nio.ByteBuffer
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.nio.file.StandardOpenOption
-import java.time.Duration
-import java.util.*
 import me.honnold.ladderhero.service.dto.download.FluxResponseProvider
 import me.honnold.ladderhero.service.dto.upload.UploadResult
 import me.honnold.ladderhero.service.dto.upload.UploadState
@@ -28,10 +22,18 @@ import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3AsyncClient
 import software.amazon.awssdk.services.s3.S3Configuration
 import software.amazon.awssdk.services.s3.model.*
+import java.nio.ByteBuffer
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.nio.file.StandardOpenOption
+import java.time.Duration
+import java.util.*
 
 @Service
 class S3ClientService(
-    s3Region: Region, s3CredentialsProvider: AwsCredentialsProvider, private val s3Bucket: String
+    s3Region: Region,
+    s3CredentialsProvider: AwsCredentialsProvider,
+    private val s3Bucket: String
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(S3ClientService::class.java)
@@ -68,12 +70,14 @@ class S3ClientService(
                     .contentType(MediaType.APPLICATION_OCTET_STREAM_VALUE)
                     .key(fileKey.toString())
                     .bucket(this.s3Bucket)
-                    .build())
+                    .build()
+            )
 
         return Mono.fromFuture(uploadRequest)
             .doOnSubscribe {
                 logger.debug(
-                    "Uploading ${filePart.filename()} to ${this.s3Bucket} with key $fileKey")
+                    "Uploading ${filePart.filename()} to ${this.s3Bucket} with key $fileKey"
+                )
             }
             .flatMapMany {
                 if (it.sdkHttpResponse() == null || !it.sdkHttpResponse().isSuccessful)
@@ -105,7 +109,8 @@ class S3ClientService(
                     acc.completedParts[part.partNumber()] = part
 
                     acc
-                })
+                }
+            )
             .flatMap { completeUpload(it) }
             .flatMap {
                 if (it.sdkHttpResponse() == null || !it.sdkHttpResponse().isSuccessful)
@@ -156,7 +161,8 @@ class S3ClientService(
                     .uploadId(state.uploadId)
                     .contentLength(buffer.capacity().toLong())
                     .build(),
-                AsyncRequestBody.fromPublisher(Mono.just(buffer)))
+                AsyncRequestBody.fromPublisher(Mono.just(buffer))
+            )
 
         return Mono.fromFuture(request)
             .doOnSubscribe {
@@ -185,6 +191,8 @@ class S3ClientService(
                     .uploadId(state.uploadId)
                     .multipartUpload(completedUpload)
                     .key(state.fileKey.toString())
-                    .build()))
+                    .build()
+            )
+        )
     }
 }

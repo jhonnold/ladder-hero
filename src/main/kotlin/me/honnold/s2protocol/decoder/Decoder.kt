@@ -1,20 +1,23 @@
 package me.honnold.s2protocol.decoder
 
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import me.honnold.s2protocol.model.data.BitArray
 import me.honnold.s2protocol.model.data.Blob
 import me.honnold.s2protocol.model.data.Struct
 import me.honnold.s2protocol.model.type.*
 import me.honnold.s2protocol.util.BitBuffer
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 abstract class Decoder(
-    val infos: List<TypeInfo>, buffer: ByteBuffer, order: ByteOrder = ByteOrder.BIG_ENDIAN
+    val infos: List<TypeInfo>,
+    buffer: ByteBuffer,
+    order: ByteOrder = ByteOrder.BIG_ENDIAN
 ) {
     val input = BitBuffer(buffer, order)
 
     fun get(id: Int): Any? {
-        return when (val info = this.infos[id]
+        return when (
+            val info = this.infos[id]
         ) {
             is ArrayTypeInfo -> getArray(info.p, info.q)
             is BitArrayTypeInfo -> getBitArray(info.p)

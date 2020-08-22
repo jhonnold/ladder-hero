@@ -1,6 +1,5 @@
 package me.honnold.ladderhero.dao
 
-import java.util.*
 import me.honnold.ladderhero.dao.domain.FileUpload
 import org.slf4j.LoggerFactory
 import org.springframework.dao.DataRetrievalFailureException
@@ -9,6 +8,7 @@ import org.springframework.data.relational.core.query.Criteria.where
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toMono
+import java.util.*
 
 @Service
 class FileUploadDAO(private val databaseClient: DatabaseClient) : DAO<FileUpload, UUID> {
