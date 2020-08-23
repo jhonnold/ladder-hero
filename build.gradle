@@ -52,10 +52,6 @@ compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }
 
-ktlint {
-    disabledRules = ["no-wildcard-imports"]
-}
-
 group "me.honnold"
 version "0.1.0"
 
