@@ -33,7 +33,7 @@ class SummaryService(
     }
 
     fun buildAndSaveSummary(data: ReplayData, replay: Replay, player: Player): Mono<Summary> {
-        val playerSummary = ReplayUtil.findPlayerInReplayDetails(player.profileId, data.details)
+        val (idx, playerSummary) = ReplayUtil.findPlayerInReplayDetails(player.profileId, data.details)
         if (playerSummary == null) {
             logger.warn(
                 "Unable to locate ${player.profileId} in ${replay.slug}! No summary will be generated"
@@ -41,8 +41,7 @@ class SummaryService(
             return Mono.empty()
         }
 
-        var workingId: Long = playerSummary["m_workingSetSlotId"]
-        workingId++ // Increment this value since it's 1 idx everywhere else
+        val gamePlayerId = idx + 1L
 
         val teamId: Long = playerSummary["m_teamId"]
 
@@ -52,11 +51,11 @@ class SummaryService(
         val nameBlob: Blob = playerSummary["m_name"]
         val name = unescapeName(nameBlob.value)
 
-        val jsonPlayer = data.metadata.players.find { p -> p.playerId == workingId }
+        val jsonPlayer = data.metadata.players.find { p -> p.playerId == gamePlayerId }
         val didWin = jsonPlayer?.result == "Win"
         val mmr = jsonPlayer?.mmr ?: 0
 
-        val summary = Summary(null, replay.id, player.id, workingId, teamId, race, name, didWin, mmr)
+        val summary = Summary(null, replay.id, player.id, gamePlayerId, teamId, race, name, didWin, mmr)
         return this.summaryDAO.save(summary)
     }
 
