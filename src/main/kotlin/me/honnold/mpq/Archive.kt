@@ -10,7 +10,6 @@ import java.nio.ByteOrder
 import java.nio.channels.SeekableByteChannel
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
-import java.util.*
 import kotlin.math.ceil
 
 class Archive(path: Path) : AutoCloseable {

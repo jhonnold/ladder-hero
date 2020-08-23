@@ -2,7 +2,6 @@ package me.honnold.ladderhero.web
 
 import me.honnold.ladderhero.service.BlizzardService
 import me.honnold.ladderhero.util.toUUID
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.http.HttpStatus
 import org.springframework.http.server.reactive.ServerHttpResponse
@@ -21,10 +20,6 @@ class BlizzardController(
     @Qualifier("homePageUri")
     private val homePageUri: URI
 ) {
-    companion object {
-        private val logger = LoggerFactory.getLogger(BlizzardController::class.java)
-    }
-
     @GetMapping(path = ["/authorize"])
     fun authorizeBlizzard(principal: Principal, response: ServerHttpResponse): Mono<Void> {
         return blizzardService.getAuthorizeRedirectUri(principal.name).flatMap { uri ->

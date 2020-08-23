@@ -26,6 +26,8 @@ data class ReplaySummaryRow(
     var teamId: Long,
     @Column("did_win")
     var didWin: Boolean,
+    @Column("mmr")
+    var mmr: Long,
     @Column("profile_id")
     var profileId: Long,
     @Column("region_id")

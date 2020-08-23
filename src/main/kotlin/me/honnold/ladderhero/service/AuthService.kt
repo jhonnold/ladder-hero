@@ -5,7 +5,6 @@ import me.honnold.ladderhero.service.domain.UserService
 import me.honnold.ladderhero.service.dto.AuthedUser
 import me.honnold.ladderhero.service.dto.JWTToken
 import me.honnold.ladderhero.web.request.AuthRequest
-import org.slf4j.LoggerFactory
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.core.userdetails.UsernameNotFoundException
@@ -21,10 +20,6 @@ class AuthService(
     private val jwtService: JWTService,
     private val blizzardService: BlizzardService
 ) {
-    companion object {
-        private val logger = LoggerFactory.getLogger(AuthService::class.java)
-    }
-
     fun getMe(username: String): Mono<AuthedUser> {
         val authedUser = AuthedUser(username)
 

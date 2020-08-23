@@ -3,7 +3,6 @@ package me.honnold.ladderhero.web.api.v1
 import me.honnold.ladderhero.service.domain.ReplayService
 import me.honnold.ladderhero.service.dto.replay.ReplayDetails
 import me.honnold.ladderhero.service.dto.replay.ReplaySummary
-import org.slf4j.LoggerFactory
 import org.springframework.data.domain.PageRequest
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
@@ -12,10 +11,6 @@ import reactor.core.publisher.Mono
 @RestController
 @RequestMapping("/api/v1/replays")
 class ReplayController(private val replayService: ReplayService) {
-    companion object {
-        private val logger = LoggerFactory.getLogger(ReplayController::class.java)
-    }
-
     @GetMapping
     fun getReplays(
         @RequestParam(defaultValue = "25")

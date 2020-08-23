@@ -54,7 +54,8 @@ class ReplayService(private val replayDAO: ReplayDAO) {
                                 player.name,
                                 player.profileId,
                                 player.teamId,
-                                player.didWin
+                                player.didWin,
+                                player.mmr
                             )
                         }
                     )
@@ -91,6 +92,7 @@ class ReplayService(private val replayDAO: ReplayDAO) {
                             playerSnapshots[0].name,
                             playerSnapshots[0].teamId,
                             playerSnapshots[0].didWin,
+                            playerSnapshots[0].mmr,
                             playerSnapshots[0].profileId,
                             playerSnapshots[0].totalLostMinerals,
                             playerSnapshots[0].totalLostVespene,

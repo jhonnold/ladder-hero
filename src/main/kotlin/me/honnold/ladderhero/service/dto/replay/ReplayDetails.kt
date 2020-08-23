@@ -20,6 +20,7 @@ data class ReplayDetails(
         val name: String = "",
         val teamId: Long = 0,
         val didWin: Boolean = false,
+        var mmr: Long = 0,
         val profileId: Long = 0,
         val totalLostMinerals: Long = 0,
         val totalLostVespene: Long = 0,

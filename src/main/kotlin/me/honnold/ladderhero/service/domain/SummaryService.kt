@@ -54,8 +54,9 @@ class SummaryService(
 
         val jsonPlayer = data.metadata.players.find { p -> p.playerId == workingId }
         val didWin = jsonPlayer?.result == "Win"
+        val mmr = jsonPlayer?.mmr ?: 0
 
-        val summary = Summary(null, replay.id, player.id, workingId, teamId, race, name, didWin)
+        val summary = Summary(null, replay.id, player.id, workingId, teamId, race, name, didWin, mmr)
         return this.summaryDAO.save(summary)
     }
 

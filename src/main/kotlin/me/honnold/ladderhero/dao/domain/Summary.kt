@@ -22,6 +22,8 @@ data class Summary(
     var name: String,
     @Column("did_win")
     var didWin: Boolean,
+    @Column("mmr")
+    var mmr: Long = 0,
     @Column("collected_minerals")
     var collectedMinerals: Long = 0,
     @Column("collected_vespene")

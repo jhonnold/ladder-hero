@@ -18,6 +18,7 @@ data class ReplaySummary(
         val name: String,
         val profileId: Long,
         val teamId: Long,
-        var didWin: Boolean
+        var didWin: Boolean,
+        var mmr: Long
     )
 }
