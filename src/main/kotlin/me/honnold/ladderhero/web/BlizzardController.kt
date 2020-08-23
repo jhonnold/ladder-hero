@@ -40,10 +40,11 @@ class BlizzardController(
         @RequestParam state: String,
         response: ServerHttpResponse
     ): Mono<Void> {
-        blizzardService.associateBlizzardCodeToUser(code, state.toUUID())
-
-        response.statusCode = HttpStatus.FOUND
-        response.headers.location = homePageUri
-        return response.setComplete()
+        return blizzardService.associateBlizzardCodeToUser(code, state.toUUID())
+            .flatMap {
+                response.statusCode = HttpStatus.FOUND
+                response.headers.location = homePageUri
+                response.setComplete()
+            }
     }
 }

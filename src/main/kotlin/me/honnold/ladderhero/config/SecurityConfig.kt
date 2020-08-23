@@ -38,10 +38,10 @@ open class SecurityConfig(
             .authorizeExchange()
             .pathMatchers(HttpMethod.OPTIONS)
             .permitAll()
+            .pathMatchers("/files/upload", "/blizzard/authorize", "/auth/me")
+            .authenticated()
             .pathMatchers("/auth/**", "/api/v1/**", "/blizzard/code")
             .permitAll()
-            .pathMatchers("/files/upload", "/blizzard/authorize")
-            .authenticated()
             .and()
             .build()
     }

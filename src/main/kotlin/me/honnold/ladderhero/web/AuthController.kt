@@ -2,23 +2,27 @@ package me.honnold.ladderhero.web
 
 import me.honnold.ladderhero.exception.UsernameAlreadyTakenException
 import me.honnold.ladderhero.service.AuthService
+import me.honnold.ladderhero.service.dto.AuthedUser
 import me.honnold.ladderhero.web.request.AuthRequest
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.core.userdetails.UsernameNotFoundException
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Mono
+import java.security.Principal
 
 @RestController
 @RequestMapping("/auth")
 class AuthController(private val authService: AuthService) {
     companion object {
         private val logger = LoggerFactory.getLogger(AuthController::class.java)
+    }
+
+    @GetMapping(path = ["/me", "/who-am-i"])
+    fun me(principal: Principal): Mono<AuthedUser> {
+        return authService.getMe(principal.name)
     }
 
     @PostMapping(path = ["/register"])

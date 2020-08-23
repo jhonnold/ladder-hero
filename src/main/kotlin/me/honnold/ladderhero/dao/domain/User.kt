@@ -15,9 +15,11 @@ data class User(
     @Column("password")
     var encodedPassword: String,
     @Column("profile_id")
-    var profileId: Int = -1,
+    var profileId: Long = -1,
     @Column("is_admin")
     var isAdmin: Boolean = false,
-    @Column("code")
-    var code: String? = null
+    @Column("account_id")
+    var accountId: Long = -1,
+    @Column("battle_tag")
+    var battleTag: String? = null
 )
