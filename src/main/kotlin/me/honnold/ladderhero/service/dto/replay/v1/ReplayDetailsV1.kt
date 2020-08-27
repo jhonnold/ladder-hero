@@ -1,11 +1,11 @@
-package me.honnold.ladderhero.service.dto.replay
+package me.honnold.ladderhero.service.dto.replay.v1
 
 import org.json.simple.JSONObject
 import java.time.LocalDateTime
 import java.util.*
 import kotlin.collections.ArrayList
 
-data class ReplayDetails(
+data class ReplayDetailsV1(
     var replayId: UUID?,
     var mapName: String = "",
     var duration: Long = 0,

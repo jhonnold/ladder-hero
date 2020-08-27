@@ -40,7 +40,7 @@ open class SecurityConfig(
             .permitAll()
             .pathMatchers("/files/upload", "/blizzard/authorize", "/auth/me")
             .authenticated()
-            .pathMatchers("/auth/**", "/api/v1/**", "/blizzard/code")
+            .pathMatchers("/auth/**", "/api/v*/**", "/blizzard/code")
             .permitAll()
             .and()
             .build()

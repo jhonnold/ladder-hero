@@ -29,6 +29,15 @@ class ReplayDAO(private val databaseClient: DatabaseClient) : DAO<Replay, UUID> 
             .first()
     }
 
+    fun findBySlug(slug: String): Mono<Replay> {
+        return databaseClient
+            .select()
+            .from(Replay::class.java)
+            .matching(Criteria.where("slug").`is`(slug))
+            .fetch()
+            .first()
+    }
+
     fun findDetailsById(id: UUID): Flux<ReplayDetailRow> {
         return databaseClient
             .execute(ReplayDetailRow.ID_QUERY)

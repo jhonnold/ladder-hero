@@ -1,11 +1,17 @@
 package me.honnold.ladderhero.service.domain
 
 import com.github.slugify.Slugify
+import me.honnold.ladderhero.dao.PlayerDAO
 import me.honnold.ladderhero.dao.ReplayDAO
+import me.honnold.ladderhero.dao.SummaryDAO
+import me.honnold.ladderhero.dao.SummarySnapshotDAO
 import me.honnold.ladderhero.dao.domain.Replay
+import me.honnold.ladderhero.dao.domain.SummarySnapshot
 import me.honnold.ladderhero.service.dto.replay.ReplayData
-import me.honnold.ladderhero.service.dto.replay.ReplayDetails
 import me.honnold.ladderhero.service.dto.replay.ReplaySummary
+import me.honnold.ladderhero.service.dto.replay.v1.ReplayDetailsV1
+import me.honnold.ladderhero.service.dto.replay.v2.ReplayDetails
+import me.honnold.ladderhero.service.dto.replay.v2.ReplayPlayer
 import me.honnold.ladderhero.util.gameDuration
 import me.honnold.ladderhero.util.isUUID
 import me.honnold.ladderhero.util.toUUID
@@ -20,9 +26,15 @@ import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.time.ZoneOffset
+import kotlin.math.roundToLong
 
 @Service
-class ReplayService(private val replayDAO: ReplayDAO) {
+class ReplayService(
+    private val replayDAO: ReplayDAO,
+    private val summaryDAO: SummaryDAO,
+    private val playerDAO: PlayerDAO,
+    private val summarySnapshotDAO: SummarySnapshotDAO
+) {
     companion object {
         private val logger = LoggerFactory.getLogger(ReplayService::class.java)
         private val slugger = Slugify()
@@ -67,15 +79,84 @@ class ReplayService(private val replayDAO: ReplayDAO) {
     }
 
     fun getReplay(lookup: String): Mono<ReplayDetails> {
+        val chartConfig = mapOf(
+            Pair(ReplayPlayer::gameTime, listOf { s: SummarySnapshot -> (s.loop / 20.4).roundToLong() }),
+            Pair(ReplayPlayer::lostResources, listOf(SummarySnapshot::lostMinerals, SummarySnapshot::lostVespene)),
+            Pair(ReplayPlayer::unspentResources, listOf(SummarySnapshot::unspentMinerals, SummarySnapshot::unspentVespene)),
+            Pair(ReplayPlayer::collectionRate, listOf(SummarySnapshot::collectionRateMinerals, SummarySnapshot::collectionRateVespene)),
+            Pair(ReplayPlayer::activeWorkers, listOf(SummarySnapshot::activeWorkers)),
+            Pair(ReplayPlayer::armyValue, listOf(SummarySnapshot::armyValueMinerals, SummarySnapshot::armyValueVespene))
+        )
+
+        val details = ReplayDetails()
+
+        val replayMono = if (lookup.isUUID()) replayDAO.findById(lookup.toUUID())
+        else replayDAO.findBySlug(lookup)
+
+        return replayMono
+            .flatMapMany { replay ->
+                details.replayId = replay.id
+                details.mapName = replay.mapName
+                details.duration = replay.duration
+                details.playedAt = replay.playedAt
+                details.slug = replay.slug
+
+                summaryDAO.findAllByReplay(replay)
+            }
+            .map { summary ->
+                val player = ReplayPlayer(
+                    summaryId = summary.id,
+                    playerId = summary.playerId,
+                    race = summary.race,
+                    name = summary.name,
+                    teamId = summary.teamId,
+                    didWin = summary.didWin,
+                    mmr = summary.mmr,
+                    totalLostResources = summary.lostResources(),
+                    totalCollectedResources = summary.collectedResources(),
+                    avgUnspentResources = summary.avgUnspentResources(),
+                    avgCollectionRate = summary.avgCollectionRate()
+                )
+
+                Pair(player, summarySnapshotDAO.findAllBySummary(summary))
+            }
+            .collectList()
+            .flatMapMany { pairs ->
+                details.players = pairs.map { it.first }
+
+                Flux.concat(pairs.map { it.second })
+            }
+            .sort { snap1, snap2 -> (snap1.loop - snap2.loop).toInt() }
+            .groupBy { it.summaryId }
+            .flatMap { group ->
+                val player = details.players.find { p -> p.summaryId == group.key() }
+                    ?: return@flatMap Mono.empty<ReplayPlayer>()
+
+                val cachedGroup = group.cache()
+
+                Flux.fromIterable(chartConfig.entries)
+                    .flatMap { (setter, getters) ->
+                        Flux.from(cachedGroup)
+                            .map { getters.fold(0L) { t, g -> t + g.invoke(it) } }
+                            .collectList()
+                            .map { setter.set(player, it) }
+                    }
+                    .map { player }
+            }
+            .collectList()
+            .map { details }
+    }
+
+    fun getReplayV1(lookup: String): Mono<ReplayDetailsV1> {
         val replayDetailsRows =
             if (lookup.isUUID()) this.replayDAO.findDetailsById(lookup.toUUID())
             else this.replayDAO.findDetailsBySlug(lookup)
 
         return replayDetailsRows.collectList().flatMap { details ->
-            if (details.size == 0) return@flatMap Mono.empty<ReplayDetails>()
+            if (details.size == 0) return@flatMap Mono.empty<ReplayDetailsV1>()
 
             val replayDetails =
-                ReplayDetails(
+                ReplayDetailsV1(
                     details[0].replayId,
                     details[0].mapName,
                     details[0].duration,
@@ -86,7 +167,7 @@ class ReplayService(private val replayDAO: ReplayDAO) {
             replayDetails.players.addAll(
                 details.groupBy { row -> row.playerId }.values.map { playerSnapshots ->
                     val playerDetails =
-                        ReplayDetails.ReplayPlayer(
+                        ReplayDetailsV1.ReplayPlayer(
                             playerSnapshots[0].playerId,
                             playerSnapshots[0].race,
                             playerSnapshots[0].name,
@@ -109,7 +190,7 @@ class ReplayService(private val replayDAO: ReplayDAO) {
                             val activeUnits =
                                 JSONParser().parse(snapshot.activeUnits.asString()) as JSONObject
 
-                            ReplayDetails.ReplayPlayer.PlayerSnapshot(
+                            ReplayDetailsV1.ReplayPlayer.PlayerSnapshot(
                                 snapshot.loop,
                                 snapshot.lostMinerals,
                                 snapshot.lostVespene,

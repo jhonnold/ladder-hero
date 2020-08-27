@@ -40,4 +40,12 @@ data class Summary(
     var avgCollectionRateMinerals: Long = 0,
     @Column("avg_collection_rate_vespene")
     var avgCollectionRateVespene: Long = 0
-)
+) {
+    fun lostResources() = lostMinerals + lostVespene
+
+    fun collectedResources() = collectedMinerals + collectedVespene
+
+    fun avgUnspentResources() = avgUnspentMinerals + avgUnspentVespene
+
+    fun avgCollectionRate() = avgCollectionRateMinerals + avgCollectionRateVespene
+}

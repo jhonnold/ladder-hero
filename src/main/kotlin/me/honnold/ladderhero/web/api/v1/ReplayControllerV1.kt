@@ -1,8 +1,8 @@
 package me.honnold.ladderhero.web.api.v1
 
 import me.honnold.ladderhero.service.domain.ReplayService
-import me.honnold.ladderhero.service.dto.replay.ReplayDetails
 import me.honnold.ladderhero.service.dto.replay.ReplaySummary
+import me.honnold.ladderhero.service.dto.replay.v1.ReplayDetailsV1
 import org.springframework.data.domain.PageRequest
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
@@ -10,7 +10,7 @@ import reactor.core.publisher.Mono
 
 @RestController
 @RequestMapping("/api/v1/replays")
-class ReplayController(private val replayService: ReplayService) {
+class ReplayControllerV1(private val replayService: ReplayService) {
     @GetMapping
     fun getReplays(
         @RequestParam(defaultValue = "25")
@@ -26,7 +26,7 @@ class ReplayController(private val replayService: ReplayService) {
     }
 
     @GetMapping("/{lookup}")
-    fun getReplay(@PathVariable lookup: String): Mono<ReplayDetails> {
-        return this.replayService.getReplay(lookup)
+    fun getReplay(@PathVariable lookup: String): Mono<ReplayDetailsV1> {
+        return this.replayService.getReplayV1(lookup)
     }
 }

@@ -1,11 +1,13 @@
 package me.honnold.ladderhero.dao
 
+import me.honnold.ladderhero.dao.domain.Summary
 import me.honnold.ladderhero.dao.domain.SummarySnapshot
 import org.slf4j.LoggerFactory
 import org.springframework.dao.DataRetrievalFailureException
 import org.springframework.data.r2dbc.core.DatabaseClient
 import org.springframework.data.relational.core.query.Criteria
 import org.springframework.stereotype.Service
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toFlux
 import reactor.kotlin.core.publisher.toMono
@@ -24,6 +26,21 @@ class SummarySnapshotDAO(private val databaseClient: DatabaseClient) : DAO<Summa
             .matching(Criteria.where("id").`is`(id))
             .fetch()
             .first()
+    }
+
+    fun findAllBySummary(summary: Summary): Flux<SummarySnapshot> {
+        val summaryId = summary.id
+
+        return if (summaryId != null) this.findAllBySummaryId(summaryId) else Flux.empty()
+    }
+
+    fun findAllBySummaryId(summaryId: UUID): Flux<SummarySnapshot> {
+        return databaseClient
+            .select()
+            .from(SummarySnapshot::class.java)
+            .matching(Criteria.where("summary_id").`is`(summaryId))
+            .fetch()
+            .all()
     }
 
     override fun save(entity: SummarySnapshot): Mono<SummarySnapshot> {
