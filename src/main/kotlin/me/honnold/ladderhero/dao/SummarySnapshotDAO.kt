@@ -34,7 +34,10 @@ class SummarySnapshotDAO(private val databaseClient: DatabaseClient) : DAO<Summa
         return if (summaryId != null) this.findAllBySummaryId(summaryId) else Flux.empty()
     }
 
-    fun findAllBySummaryId(summaryId: UUID): Flux<SummarySnapshot> {
+    fun findAllBySummaryId(summaryId: UUID?): Flux<SummarySnapshot> {
+        if (summaryId == null)
+            return Flux.empty()
+
         return databaseClient
             .select()
             .from(SummarySnapshot::class.java)

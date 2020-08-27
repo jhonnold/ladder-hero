@@ -1,7 +1,6 @@
 package me.honnold.ladderhero.service.domain
 
 import com.github.slugify.Slugify
-import me.honnold.ladderhero.dao.PlayerDAO
 import me.honnold.ladderhero.dao.ReplayDAO
 import me.honnold.ladderhero.dao.SummaryDAO
 import me.honnold.ladderhero.dao.SummarySnapshotDAO
@@ -25,6 +24,9 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toFlux
+import reactor.kotlin.core.publisher.toMono
+import reactor.kotlin.core.util.function.*
 import java.time.ZoneOffset
 import kotlin.math.roundToLong
 
@@ -32,7 +34,6 @@ import kotlin.math.roundToLong
 class ReplayService(
     private val replayDAO: ReplayDAO,
     private val summaryDAO: SummaryDAO,
-    private val playerDAO: PlayerDAO,
     private val summarySnapshotDAO: SummarySnapshotDAO
 ) {
     companion object {
@@ -104,7 +105,7 @@ class ReplayService(
                 summaryDAO.findAllByReplay(replay)
             }
             .map { summary ->
-                val player = ReplayPlayer(
+                ReplayPlayer(
                     summaryId = summary.id,
                     playerId = summary.playerId,
                     race = summary.race,
@@ -117,31 +118,46 @@ class ReplayService(
                     avgUnspentResources = summary.avgUnspentResources(),
                     avgCollectionRate = summary.avgCollectionRate()
                 )
-
-                Pair(player, summarySnapshotDAO.findAllBySummary(summary))
             }
             .collectList()
-            .flatMapMany { pairs ->
-                details.players = pairs.map { it.first }
+            .flatMapMany { players ->
+                details.players = players
 
-                Flux.concat(pairs.map { it.second })
+                players.toFlux()
+            }
+            .flatMap {
+                summarySnapshotDAO.findAllBySummaryId(it.summaryId)
+                    .map { snap ->
+                        snap.activeUnits?.asString() // Consuming the value to be safe of memory leaks
+                        snap
+                    }
             }
             .sort { snap1, snap2 -> (snap1.loop - snap2.loop).toInt() }
             .groupBy { it.summaryId }
-            .flatMap { group ->
-                val player = details.players.find { p -> p.summaryId == group.key() }
-                    ?: return@flatMap Mono.empty<ReplayPlayer>()
+            .flatMap { snapshots ->
+                val player = details.players.toFlux()
+                    .filter { it.summaryId == snapshots.key() }
+                    .next()
 
-                val cachedGroup = group.cache()
-
-                Flux.fromIterable(chartConfig.entries)
-                    .flatMap { (setter, getters) ->
-                        Flux.from(cachedGroup)
-                            .map { getters.fold(0L) { t, g -> t + g.invoke(it) } }
-                            .collectList()
-                            .map { setter.set(player, it) }
+                val results = snapshots
+                    .flatMap { snapshot ->
+                        chartConfig.entries.toFlux()
+                            .flatMap { (setter, v) ->
+                                Mono.zip(
+                                    snapshot.loop.toMono(),
+                                    setter.toMono(),
+                                    v.toFlux().reduce(0L, { t, g -> t + g.invoke(snapshot) })
+                                )
+                            }
                     }
-                    .map { player }
+                    .sort { (l1), (l2) -> (l1 - l2).toInt() }
+                    .collectMultimap({ it.t2 }, { it.t3 })
+
+                Mono.zip(player, results)
+            }
+            .flatMap { (player, resultMap) ->
+                resultMap.entries.toFlux()
+                    .reduce<ReplayPlayer>(player, { p, (setter, data) -> setter.set(p, data); p })
             }
             .collectList()
             .map { details }

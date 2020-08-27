@@ -9,7 +9,7 @@ data class ReplayDetails(
     var duration: Long = -1,
     var playedAt: LocalDateTime? = null,
     var slug: String? = null,
-    var players: List<ReplayPlayer> = mutableListOf()
+    var players: Collection<ReplayPlayer> = mutableListOf()
 )
 
 data class ReplayPlayer(
@@ -26,10 +26,10 @@ data class ReplayPlayer(
     var avgUnspentResources: Long = -1,
     var avgCollectionRate: Long = -1
 ) {
-    var gameTime: List<Long> = mutableListOf()
-    var lostResources: List<Long> = mutableListOf()
-    var unspentResources: List<Long> = mutableListOf()
-    var collectionRate: List<Long> = mutableListOf()
-    var activeWorkers: List<Long> = mutableListOf()
-    var armyValue: List<Long> = mutableListOf()
+    var gameTime: Collection<Long> = mutableListOf()
+    var lostResources: Collection<Long> = mutableListOf()
+    var unspentResources: Collection<Long> = mutableListOf()
+    var collectionRate: Collection<Long> = mutableListOf()
+    var activeWorkers: Collection<Long> = mutableListOf()
+    var armyValue: Collection<Long> = mutableListOf()
 }
