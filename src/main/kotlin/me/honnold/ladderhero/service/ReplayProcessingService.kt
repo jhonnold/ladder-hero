@@ -1,13 +1,17 @@
 package me.honnold.ladderhero.service
 
+import me.honnold.ladderhero.service.S3ClientService.Companion.TEMP_DIR
 import me.honnold.ladderhero.service.domain.PlayerService
 import me.honnold.ladderhero.service.domain.ReplayService
 import me.honnold.ladderhero.service.domain.SummaryService
 import me.honnold.ladderhero.service.dto.replay.ReplayData
 import me.honnold.ladderhero.service.dto.upload.UploadResult
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
+import reactor.core.publisher.Mono
 import reactor.util.function.Tuples
+import java.nio.file.Paths
 
 @Service
 class ReplayProcessingService(
@@ -20,10 +24,18 @@ class ReplayProcessingService(
         private val logger = LoggerFactory.getLogger(ReplayService::class.java)
     }
 
+    @Value("\${aws.offline}")
+    private var offline = true
+
     fun processUploadAsReplay(uploadResult: UploadResult) {
-        this.s3ClientService
-            .download(uploadResult.fileKey)
-            .map { path -> ReplayData(path) }
+        val pathMono = if (offline) {
+            val path = Paths.get(TEMP_DIR, "${uploadResult.fileKey}.SC2Replay")
+            Mono.just(path)
+        } else {
+            this.s3ClientService.download(uploadResult.fileKey)
+        }
+
+        pathMono.map { path -> ReplayData(path) }
             .flatMap { data ->
                 this.replayService.buildAndSaveReplay(data).map { replay ->
                     Tuples.of(data, replay)

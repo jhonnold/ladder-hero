@@ -21,8 +21,8 @@ class FileController(private val uploadService: UploadService) {
 
     @PostMapping(path = ["/upload"], consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun upload(@RequestPart files: Flux<FilePart>): Mono<List<UploadResult>> {
-        return this.uploadService.uploadFiles(files).collectList().doOnSuccess {
-            logger.info("Successfully uploaded ${it.size} files")
-        }
+        return this.uploadService.uploadFiles(files)
+            .collectList()
+            .doOnSuccess { logger.info("Successfully uploaded ${it.size} files") }
     }
 }

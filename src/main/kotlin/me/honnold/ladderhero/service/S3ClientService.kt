@@ -37,7 +37,7 @@ class S3ClientService(
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(S3ClientService::class.java)
-        private val TEMP_DIR = System.getProperty("java.io.tmpdir")
+        internal val TEMP_DIR = System.getProperty("java.io.tmpdir")
     }
 
     private val s3Client: S3AsyncClient
