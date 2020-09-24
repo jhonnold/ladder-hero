@@ -33,11 +33,11 @@ import java.util.*
 class S3ClientService(
     s3Region: Region,
     s3CredentialsProvider: AwsCredentialsProvider,
-    private val s3Bucket: String
+    private val s3Bucket: String,
+    private val tempDir: String
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(S3ClientService::class.java)
-        internal val TEMP_DIR = System.getProperty("java.io.tmpdir")
     }
 
     private val s3Client: S3AsyncClient
@@ -125,7 +125,7 @@ class S3ClientService(
     }
 
     fun download(uuid: UUID): Mono<Path> {
-        val path = Paths.get(TEMP_DIR, "$uuid.SC2Replay")
+        val path = Paths.get(tempDir, "$uuid.SC2Replay")
         logger.debug("Requesting file key $uuid")
 
         val request = GetObjectRequest.builder().bucket(this.s3Bucket).key(uuid.toString()).build()

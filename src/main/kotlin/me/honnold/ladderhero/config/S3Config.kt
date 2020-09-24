@@ -35,4 +35,12 @@ open class S3Config {
     open fun getS3Bucket(): String {
         return this.bucket
     }
+
+    @Bean("tempDir")
+    open fun getTempDir(): String {
+        val property = System.getProperty("java.io.tmpdir")!!
+
+        println(property)
+        return property
+    }
 }

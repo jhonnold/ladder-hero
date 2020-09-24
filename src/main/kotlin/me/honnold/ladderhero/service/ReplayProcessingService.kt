@@ -1,6 +1,5 @@
 package me.honnold.ladderhero.service
 
-import me.honnold.ladderhero.service.S3ClientService.Companion.TEMP_DIR
 import me.honnold.ladderhero.service.domain.PlayerService
 import me.honnold.ladderhero.service.domain.ReplayService
 import me.honnold.ladderhero.service.domain.SummaryService
@@ -11,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import reactor.util.function.Tuples
+import java.nio.file.Files
 import java.nio.file.Paths
 
 @Service
@@ -18,7 +18,8 @@ class ReplayProcessingService(
     private val s3ClientService: S3ClientService,
     private val summaryService: SummaryService,
     private val replayService: ReplayService,
-    private val playerService: PlayerService
+    private val playerService: PlayerService,
+    private val tempDir: String
 ) {
     companion object {
         private val logger = LoggerFactory.getLogger(ReplayService::class.java)
@@ -29,13 +30,19 @@ class ReplayProcessingService(
 
     fun processUploadAsReplay(uploadResult: UploadResult) {
         val pathMono = if (offline) {
-            val path = Paths.get(TEMP_DIR, "${uploadResult.fileKey}.SC2Replay")
+            val path = Paths.get(tempDir, "${uploadResult.fileKey}.SC2Replay")
             Mono.just(path)
         } else {
             this.s3ClientService.download(uploadResult.fileKey)
         }
 
         pathMono.map { path -> ReplayData(path) }
+            .doOnNext { data ->
+                Mono.just(Files.delete(data.path))
+                    .doOnSuccess { logger.debug("Successfully removed temporary file ${data.path}") }
+                    .doOnError { logger.warn("Unable to delete temporary file ${data.path} -- ${it.message}") }
+                    .subscribe()
+            }
             .flatMap { data ->
                 this.replayService.buildAndSaveReplay(data).map { replay ->
                     Tuples.of(data, replay)

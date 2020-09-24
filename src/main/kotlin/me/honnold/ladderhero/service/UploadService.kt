@@ -1,6 +1,5 @@
 package me.honnold.ladderhero.service
 
-import me.honnold.ladderhero.service.S3ClientService.Companion.TEMP_DIR
 import me.honnold.ladderhero.service.domain.FileService
 import me.honnold.ladderhero.service.dto.upload.UploadResult
 import org.springframework.beans.factory.annotation.Value
@@ -17,7 +16,8 @@ import java.util.*
 class UploadService(
     private val s3ClientService: S3ClientService,
     private val fileService: FileService,
-    private val replayProcessingService: ReplayProcessingService
+    private val replayProcessingService: ReplayProcessingService,
+    private val tempDir: String
 ) {
     @Value("\${aws.offline}")
     private var offline = true
@@ -26,7 +26,7 @@ class UploadService(
         val uploadFlux = if (offline) {
             files.flatMap { file ->
                 val id = UUID.randomUUID()
-                val path = Paths.get(TEMP_DIR, "$id.SC2Replay")
+                val path = Paths.get(tempDir, "$id.SC2Replay")
 
                 DataBufferUtils.write(file.content(), path, StandardOpenOption.CREATE_NEW)
                     .then(Mono.just(UploadResult(id, file.filename())))

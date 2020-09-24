@@ -10,7 +10,7 @@ import me.honnold.s2protocol.model.event.Event
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 
-class ReplayData(path: Path) {
+class ReplayData(val path: Path) {
     companion object {
         private const val METADATA_FILE_NAME = "replay.gamemetadata.json"
         private const val INIT_DATA_FILE_NAME = "replay.initData"
